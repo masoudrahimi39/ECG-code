@@ -84,6 +84,8 @@ def plot_12(
 
 def plot(
         ecg, 
+        full_ecg,             # changed
+        lead_index_full_ecg,
         sample_rate    = 500, 
         title          = 'ECG 12', 
         lead_index     = lead_index, 
@@ -98,6 +100,8 @@ def plot(
     """Plot multi lead ECG chart.
     # Arguments
         ecg        : m x n ECG signal data, which m is number of leads and n is length of signal.
+        full_ecg   : the ECG signal of specific lead that you want to have completely.
+        lead_index_full_ecg: the name of the full ecg.
         sample_rate: Sample rate of the signal.
         title      : Title which will be shown on top off chart
         lead_index : Lead name array in the same order of ecg, will be shown on 
@@ -115,11 +119,11 @@ def plot(
         lead_order = list(range(0,len(ecg)))
     secs  = len(ecg[0])/sample_rate
     leads = len(lead_order)
-    rows  = int(ceil(leads/columns))
+    rows  = int(ceil(leads/columns)) 
     # display_factor = 2.5
     display_factor = 1
     line_width = 0.5
-    fig, ax = plt.subplots(figsize=(secs*columns * display_factor, rows * row_height / 5 * display_factor), frameon=True)
+    fig, ax = plt.subplots(figsize=(secs*columns * display_factor, (rows) * row_height / 5 * display_factor), frameon=True)
     display_factor = display_factor ** 0.5
     fig.subplots_adjust(
         hspace = 0, 
@@ -135,7 +139,7 @@ def plot(
     
     x_min = -0.5                                         # changed to put free space in the left part of the least left lead   چپ ترین
     x_max = columns*secs + 0.8                           # changed  to put free space in the right part of the most right lead   راست ترین
-    y_min = row_height/4 - (rows/2)*row_height  - 2      # changed to put free space in the down of the picture 
+    y_min = row_height/4 - (rows/2)*row_height  - 4.2      # changed to put free space in the down of the picture 
     y_max = row_height/4 + 2                             # changed to put free space in the above of the picture
 
     if (style == 'bw'):
@@ -199,6 +203,16 @@ def plot(
                     linewidth=line_width * display_factor, 
                     color=color_line
                     )
+    ## below was added to have full ecg in the last row. changed
+    y_offset_full_ecg = - ((row_height/2) * ceil((i+1)%(rows+1)))
+    if(show_lead_name):
+        ax.text(0 + 0.01, y_offset_full_ecg + 0.8, lead_index_full_ecg, fontsize=9 * display_factor)
+    ax.plot( 
+            np.arange(0, len(full_ecg)*step, step) + 0, 
+            full_ecg + y_offset_full_ecg,
+            linewidth=line_width * display_factor, 
+            color=color_line
+            )
         
 
 def plot_1(ecg, sample_rate=500, title = 'ECG', fig_width = 15, fig_height = 2, line_w = 0.5, ecg_amp = 1.8, timetick = 0.2):
@@ -268,12 +282,12 @@ def save_as_svg(file_name, path = DEFAULT_PATH):
     plt.savefig(path + file_name + '.svg')
     plt.close()
 
-def save_as_jpg(file_name, path = DEFAULT_PATH):
+def save_as_jpg(file_name, path = DEFAULT_PATH, dpi=200):
     """Plot multi lead ECG chart.
     # Arguments
         file_name: file_name
         path     : path to save image, defaults to current folder
     """
     plt.ioff()
-    plt.savefig(path + file_name + '.jpg')
+    plt.savefig(path + file_name + '.jpg',  dpi = dpi)
     plt.close()
