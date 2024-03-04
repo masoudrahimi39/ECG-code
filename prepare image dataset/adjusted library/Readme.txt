@@ -1,0 +1,1 @@
+I used the ecg_plot library but in order to generate the exact picture, I had to change the library a little. so this folder contains the changes and the chages are flaged with # changed in the script
