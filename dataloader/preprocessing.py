@@ -55,4 +55,4 @@ y_train = Y[(Y.strat_fold != test_fold)].diagnostic_superclass
 # Test
 X_test = X[np.where(Y.strat_fold == test_fold)]
 y_test = Y[Y.strat_fold == test_fold].diagnostic_superclass
-np.save(f'{os.getenv("npy_path")}all_signals_{sampling_rate}Hz.npy', X)
+np.save(os.getenv("npy_path"), X)
