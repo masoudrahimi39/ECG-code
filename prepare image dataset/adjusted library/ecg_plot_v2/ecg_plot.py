@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import AutoMinorLocator
 import os
 from math import ceil 
-
+import random
 
 def _ax_plot(ax, x, y, secs=10, lwidth=0.5, amplitude_ecg = 1.8, time_ticks =0.2):
     # ax.set_xticks(np.arange(0,11,time_ticks))    
@@ -122,29 +122,40 @@ def plot(
     secs  = len(ecg[0])/sample_rate
     leads = len(lead_order)
     rows  = int(ceil(leads/columns)) 
-    # display_factor = 2.5
     display_factor = 1
-    line_width = 0.5
-    # TODO: figsize need to be chaged to have fixed length for grids 
-    fig, ax = plt.subplots(figsize=(secs*columns * display_factor, (rows) * row_height / 5 * display_factor), frameon=True)
-    # fig, ax = plt.subplots(frameon=True)
-    display_factor = display_factor ** 0.5
-    fig.subplots_adjust(
-        hspace = 0, 
-        wspace = 0,
-        left   = 0,  # the left side of the subplots of the figure
-        right  = 1,  # the right side of the subplots of the figure
-        bottom = 0,  # the bottom of the subplots of the figure
-        top    = 1
-        )
+    # display_factor = display_factor ** 0.5
+    mm = 1/25.4  # milimeters in inches    # added to specify values in milimeter
+    line_width = 4*mm/25.4*72       # added to determine the line width in milimeters. lind width in milimeters is devided by 25.4*72 to be converted to unit of points.
+    
+    d_column = 40/45*mm
+    # determine figure size 
+    fig_width = (3.25)*5*mm + 25*secs*columns*mm + (columns-1)*d_column + (7)*5*mm   # added
+    if full_ecg_name:
+        fig_height = (4+4)*5*mm + (rows)*row_height*5*mm + 0.05   # added
+    else:
+        fig_height = (4+4)*5*mm + (rows-1)*row_height*5*mm    # added
+    figure_size = (fig_width, fig_height)  # added
+    fig, ax = plt.subplots(figsize=figure_size, frameon=True, dpi= 700)
+
+    # fig.subplots_adjust(
+    #     hspace = 0, 
+    #     wspace = 0,
+    #     left   = 0,  # the left side of the subplots of the figure
+    #     right  = 1,  # the right side of the subplots of the figure
+    #     bottom = 0,  # the bottom of the subplots of the figure
+    #     top    = 1
+    #     )
 
     fig.suptitle(title)
 
     
-    x_min = -0.5                                         # changed to put free space in the left part of the least left lead   چپ ترین
-    x_max = columns*secs + 0.8                           # changed  to put free space in the right part of the most right lead   راست ترین
-    y_min = row_height/4 - (rows/2)*row_height  - 4.2      # changed to put free space in the down of the picture 
-    y_max = row_height/4 + 2                             # changed to put free space in the above of the picture
+    x_min = -0.65                                              # changed to put free space (3 cell which is equal to 0.6 seconds or 15 milimeters) in the left part of the least left lead   چپ ترین
+    x_max = columns*secs + (columns-1)*40/45*0.2 + 1.4       # changed  to put free space in the right part of the most right lead   راست ترین
+    if full_ecg_name:
+        y_min = -3 - (rows)*row_height*0.5         # changed to put free space in the down of the picture 
+    else:
+        y_min = -2 - (rows-1)*row_height*0.5
+    y_max = 2                                 # changed to put free space in the above of the picture
 
     if (style == 'bw'):
         color_major = (0.4,0.4,0.4)
@@ -156,7 +167,7 @@ def plot(
         color_line  = (0,0,0) # black                   # changed
 
     if(show_grid):
-        ax.set_xticks(np.arange(x_min,x_max,0.2), )    
+        ax.set_xticks(np.arange(x_min,x_max,0.2))    
         ax.set_yticks(np.arange(y_min,y_max,0.5))
         # disable the xtickslabels
         ax.set_xticklabels([])                    # changed
@@ -190,29 +201,31 @@ def plot(
 
                 x_offset = 0
                 if(c > 0):
-                    x_offset = secs * c 
+                    x_offset = secs * c + (c)*d_column       # changed to have 1/5 space between two columns
                     if(show_separate_line):
-                        # below was changed to have the seprate line in a broken format
-                        ax.plot([x_offset, x_offset], [ecg[t_lead][0] + y_offset - 0.5, ecg[t_lead][0] + y_offset - 0.2], linewidth=line_width * display_factor, color=color_line)  # changed
-                        ax.plot([x_offset, x_offset], [ecg[t_lead][0] + y_offset + 0.2, ecg[t_lead][0] + y_offset + 0.5], linewidth=line_width * display_factor, color=color_line)  # changed
+
+                        # below was changed to have the vertical seprator line in a broken format
+                        ax.plot([x_offset-0.5*d_column, x_offset-0.5*d_column], [ecg[t_lead][0] + y_offset - 0.5, ecg[t_lead][0] + y_offset - 0.2], linewidth=line_width * display_factor, color=color_line)  # changed
+                        ax.plot([x_offset-0.5*d_column, x_offset-0.5*d_column], [ecg[t_lead][0] + y_offset + 0.2, ecg[t_lead][0] + y_offset + 0.5], linewidth=line_width * display_factor, color=color_line)  # changed
 
          
                 t_lead = lead_order[c * rows + i]
          
                 step = 1.0/sample_rate
                 if(show_lead_name):
-                    ax.text(x_offset + 0.01, y_offset + 0.8, lead_index[t_lead], fontsize=9 * display_factor)
+                    ax.text(x_offset + 0.01, y_offset + 0.8, lead_index[t_lead], fontsize=6 * display_factor)
                 ax.plot(
                     np.arange(0, len(ecg[t_lead])*step, step) + x_offset, 
                     ecg[t_lead] + y_offset,
                     linewidth=line_width * display_factor, 
                     color=color_line
                     )
+                
     ## below was added to have full ecg in the last row. changed
     if full_ecg_name: 
         y_offset_full_ecg = - ((row_height/2) * ceil((i+1)%(rows+1)))
         if(show_lead_name):
-            ax.text(0 + 0.01, y_offset_full_ecg + 0.8, full_ecg_name, fontsize=9 * display_factor)
+            ax.text(0 + 0.01, y_offset_full_ecg + 0.8, full_ecg_name, fontsize=6 * display_factor)
         ax.plot( 
                 np.arange(0, len(full_ecg)*step, step) + 0, 
                 full_ecg + y_offset_full_ecg,
