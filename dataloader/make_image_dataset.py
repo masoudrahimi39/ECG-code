@@ -25,10 +25,11 @@ lead_display = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', '
 # TODO: image scale should be corrected(masoud will do it)
 # TODO: add label for object detection task (i.e., bounding box, etc) (reza will do it)
 
-lead_config = {'3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None}, 
+lead_config = {
+                # '3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None}, 
                '3by4': {'n_column':4, 'length': 250, 'lead_order': list(range(12)), 'full_ecg_name': 'II'},
-               '12by1':  {'n_column':1, 'length': 1000, 'lead_order': list(range(12)), 'full_ecg_name': None}, 
-               '6by2': {'n_column':2, 'length': 500, 'lead_order': list(range(12)), 'full_ecg_name': 'II'}, 
+            #    '12by1':  {'n_column':1, 'length': 1000, 'lead_order': list(range(12)), 'full_ecg_name': None}, 
+            #    '6by2': {'n_column':2, 'length': 500, 'lead_order': list(range(12)), 'full_ecg_name': 'II'}, 
                }  # key determines lead format, value determines some variable passing to ecg_plot_vs.plot
 cnt = 0
 step = 2       # number of images with same lead format; if step == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
@@ -53,11 +54,13 @@ for lead_format, each_lead_config in lead_config.items():
             row_height=6.3,
             style=None,
         ))
-        ecg_plot_v2.save_as_jpg(str(i)+'_'+lead_format, path=os.getenv("ECG_dataset_path"), dpi=100)
+        file_name = str(i)+'_'+lead_format
+        logs[-1]["file_name"] = file_name
+        ecg_plot_v2.save_as_jpg(file_name, path="./", dpi=100)
         plt.close()
 
     cnt += step
 
-with open(f'{os.getenv("ECG_dataset_path")}image_dataset_v3.0/logs.json', 'w') as f:
+with open(f'./logs.json', 'w') as f:
     json.dump(logs, f)
 
