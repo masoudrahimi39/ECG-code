@@ -1,2 +1,4 @@
 all_signals_100Hz.npy
 *pyc
+datasets/
+.DS_Store
