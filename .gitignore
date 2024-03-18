@@ -1,4 +1,8 @@
-all_signals_100Hz.npy
 *pyc
 datasets/
+datasets/*
 .DS_Store
+prepare image dataset/adjusted library/ecg_plot_v2/__pycache__/__init__.cpython-311.pyc
+prepare image dataset/adjusted library/ecg_plot_v2/__pycache__/ecg_plot.cpython-311.pyc
+prepare_image_dataset/adjusted_library/ecg_plot/__pycache__/*
+prepare_image_dataset/adjusted_library/ecg_plot_v2/__pycache__/*
