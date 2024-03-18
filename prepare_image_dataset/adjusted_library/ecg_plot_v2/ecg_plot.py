@@ -134,8 +134,8 @@ def plot(
         fig_height = (4+4)*5*mm + (rows)*row_height*5*mm + 0.05   # added
     else:
         fig_height = (4+4)*5*mm + (rows-1)*row_height*5*mm    # added
-    figure_size = (fig_width, fig_height)  # added
-    fig, ax = plt.subplots(figsize=figure_size, frameon=True, dpi= 700)
+    figsize = (fig_width, fig_height)  # added
+    fig, ax = plt.subplots(figsize=figsize, frameon=True, dpi= 700)
 
     # fig.subplots_adjust(
     #     hspace = 0, 
@@ -192,6 +192,15 @@ def plot(
     ax.set_ylim(y_min,y_max)
     ax.set_xlim(x_min,x_max)
 
+    output_log = {
+        "figsize": figsize,
+        "y_min": y_min,
+        "y_max": y_max,
+        "x_min": x_min,
+        "x_max": x_max,
+        "leads": []
+    }
+
     for c in range(0, columns):
         for i in range(0, rows):
             if (c * rows + i < leads):
@@ -213,25 +222,62 @@ def plot(
          
                 step = 1.0/sample_rate
                 if(show_lead_name):
-                    ax.text(x_offset + 0.01, y_offset + 0.8, lead_index[t_lead], fontsize=6 * display_factor)
+                    x_text = x_offset + 0.01
+                    y_text = y_offset + 0.8
+                    content_text = lead_index[t_lead]
+                    fontsize = 9 * display_factor
+                    ax.text(x_text, y_text, content_text, fontsize=fontsize)
+                
+                x_plot = np.arange(0, len(ecg[t_lead])*step, step) + x_offset
+                y_plot = ecg[t_lead] + y_offset
                 ax.plot(
-                    np.arange(0, len(ecg[t_lead])*step, step) + x_offset, 
-                    ecg[t_lead] + y_offset,
+                    x_plot, 
+                    y_plot,
                     linewidth=line_width * display_factor, 
                     color=color_line
                     )
-                
+
+                output_log['leads'].append({
+                    "min_x_plot": min(x_plot),
+                    "max_x_plot": max(x_plot),
+                    "min_y_plot": min(y_plot),
+                    "max_y_plot": max(y_plot),
+                    "x_text": x_text,
+                    "y_text": y_text,
+                    "fontsize": fontsize,
+                    "text": content_text,
+                    "ecg": list(ecg[t_lead]),
+                })                
     ## below was added to have full ecg in the last row. changed
     if full_ecg_name: 
         y_offset_full_ecg = - ((row_height/2) * ceil((i+1)%(rows+1)))
         if(show_lead_name):
-            ax.text(0 + 0.01, y_offset_full_ecg + 0.8, full_ecg_name, fontsize=6 * display_factor)
+            x_text = 0 + 0.01
+            y_text = y_offset_full_ecg + 0.8
+            fontsize = 9 * display_factor
+            content_text = full_ecg_name
+            ax.text(x_text, y_text, full_ecg_name, fontsize=9 * display_factor)
+        x_plot = np.arange(0, len(full_ecg)*step, step) + 0
+        y_plot = full_ecg + y_offset_full_ecg
         ax.plot( 
-                np.arange(0, len(full_ecg)*step, step) + 0, 
-                full_ecg + y_offset_full_ecg,
+                x_plot,
+                y_plot,
                 linewidth=line_width * display_factor, 
                 color=color_line
                 )
+        output_log['leads'].append({
+            "min_x_plot": min(x_plot),
+            "max_x_plot": max(x_plot),
+            "min_y_plot": min(y_plot),
+            "max_y_plot": max(y_plot),
+            "x_text": x_text,
+            "y_text": y_text,
+            "fontsize": fontsize,
+            "text": content_text,
+            "ecg": list(full_ecg),
+        })
+
+    return output_log
         
 
 def plot_1(ecg, sample_rate=500, title = 'ECG', fig_width = 15, fig_height = 2, line_w = 0.5, ecg_amp = 1.8, timetick = 0.2):
