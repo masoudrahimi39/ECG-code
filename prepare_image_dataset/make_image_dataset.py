@@ -69,9 +69,9 @@ row_height = 6.265
 lead_index = ['I', 'II', 'III', 'aVL', 'aVR', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']  # order of the leads in the dataset
 lead_display = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'] # order of the lead that I want to be shown
 lead_config = {'3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None, 'n_leads': 3}, 
-               '3by4': {'n_column':4, 'length': 250, 'lead_order': list(range(12)), 'full_ecg_name': 'II', 'n_leads': 12},
-               '12by1':  {'n_column':1, 'length': 1000, 'lead_order': list(range(12)), 'full_ecg_name': None, 'n_leads': 12}, 
-               '6by2': {'n_column':2, 'length': 500, 'lead_order': list(range(12)), 'full_ecg_name': 'II', 'n_leads': 12}, 
+               '3by4': {'n_column':4, 'length': 250, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12},
+               '12by1':  {'n_column':1, 'length': 1000, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': None, 'n_leads': 12}, 
+               '6by2': {'n_column':2, 'length': 500, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12}, 
                }  # key determines lead format, value determines some variable passing to ecg_plot_vs.plot
 cnt = 0
 logs = []
@@ -84,9 +84,11 @@ for lead_format, each_lead_config in lead_config.items():
                 full_ecg_name=each_lead_config['full_ecg_name'],
                 sample_rate=sampling_rate, 
                 columns=each_lead_config['n_column'],
-                lead_index=lead_index, title='', 
+                lead_index=lead_index,
+                title='', 
                 lead_order=each_lead_config['lead_order'],
-                show_lead_name=True, show_grid=True, 
+                show_lead_name=True,
+                show_grid=True, 
                 show_separate_line=True,
                 row_height=row_height,
                 style=None)
