@@ -1,3 +1,5 @@
+""" input, output, felan kar ro mikone
+"""
 # import os
 # from dotenv import load_dotenv
 
@@ -105,7 +107,7 @@ plt.savefig("o.png")
 
 plt.close('all')
 img = plt.imread(f"./{d['file_name']}.jpg")
-plt.imshow(img)
+plt.imshow(img) 
 plt.savefig("o.png")
 
 height, width, layers = img.shape
@@ -128,3 +130,5 @@ for l in d['leads']:
     rec = patches.Rectangle((lead_start_x, lead_start_y), lead_end_x-lead_start_x, lead_end_y-lead_start_y, linewidth=0.4, edgecolor='red', facecolor='none')
     ax.add_patch(rec)
 plt.savefig("o.png", dpi=200)
+
+
