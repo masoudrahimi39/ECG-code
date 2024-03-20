@@ -1,134 +1,60 @@
-""" input, output, felan kar ro mikone
-"""
-# import os
-# from dotenv import load_dotenv
-
-# load_dotenv()
-
-# raw_data = os.getenv("npy_path")
-
-
-# import numpy as np
-# import torch
-# from torch.utils.data import Dataset, DataLoader
-# from torchvision import transforms
-# import matplotlib.pyplot as plt
-# import os
-
-# import sys
-# sys.path.append("./prepare image dataset/adjusted library")  # in order to import the adjusted "ecg_plot" library
-# # Assuming ecg_plot_v2 is a module you have access to that provides the plotting functionality
-# import ecg_plot_v2
-
-# class ECGDataset(Dataset):
-#     def __init__(self, npy_file, lead_config, transform=None):
-#         """
-#         Args:
-#             npy_file (string): Path to the .npy file with ECG signals.
-#             lead_config (dict): Configuration for ECG lead formats.
-#             transform (callable, optional): Optional transform to be applied on a sample.
-#         """
-#         self.X = np.load(npy_file)
-#         self.lead_config = lead_config
-#         self.transform = transform
-
-#     def __len__(self):
-#         return len(self.X)
-
-#     def __getitem__(self, idx):
-#         ecg_signal = self.X[idx]
-#         # Generate an image based on the ecg_signal and lead_config here
-#         # This is a simplified version, adjust according to your ecg_plot_v2.plot and save_as_jpg functions
-#         # For demonstration, let's assume we use a simple plt.plot() and savefig()
-        
-#         # Select a lead_format from lead_config randomly or in a fixed manner
-#         # Here we select '3by1' just for demonstration
-#         lead_format = '3by1'
-#         each_lead_config = self.lead_config[lead_format]
-        
-#         fig, ax = plt.subplots()
-#         ax.plot(ecg_signal[:each_lead_config['length'], each_lead_config['lead_order'][0]])
-#         # Normally, you'd use ecg_plot_v2.plot() here as per your existing code
-#         plt.close(fig)
-        
-#         # Convert plot to image (in memory)
-#         fig.canvas.draw()
-#         img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-#         img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-        
-#         if self.transform:
-#             img = self.transform(img)
-        
-#         return img
-
-# transform = transforms.Compose([
-#     transforms.ToPILImage(),
-#     transforms.RandomHorizontalFlip(),  # Example augmentation
-#     transforms.ToTensor(),
-# ])
-
-# lead_config = {'3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None}, 
-#                '3by4': {'n_column':4, 'length': 250, 'lead_order': list(range(12)), 'full_ecg_name': 'II'},
-#                '12by1':  {'n_column':1, 'length': 1000, 'lead_order': list(range(12)), 'full_ecg_name': None}, 
-#                '6by2': {'n_column':2, 'length': 500, 'lead_order': list(range(12)), 'full_ecg_name': 'II'}, 
-#                }  # key determines lead format, value determines some variable passing to ecg_plot_vs.plot
-
-# # Define your dataset
-# ecg_dataset = ECGDataset(npy_file='all_signals_100Hz.npy', lead_config=lead_config, transform=transform)
-
-# # Create DataLoader
-# ecg_dataloader = DataLoader(ecg_dataset, batch_size=4, shuffle=True)
-
-
+from .utils import return_bounding_boxes
+import torch
+from torch.utils.data import Dataset, DataLoader
+from dotenv import load_dotenv
+import os
+import numpy as np
 import json
 import matplotlib.pyplot as plt
-from PIL import Image
-import matplotlib.patches as patches
+import cv2
 
-# Create a figure and axis
+load_dotenv()
 
-# Open the JSON file
-with open('logs.json', 'r') as f:
-    # Load the JSON data
-    data = json.load(f)
+class ECGDataset(Dataset):
+    def __init__(self, image_path, log_path, max_leads=13, padded_image_size=(224, 224)):
+        with open(log_path, 'r') as f:
+            # Load the JSON data
+            self.logs = json.load(f)['samples']
 
-d = data[0]
+        self.image_path = image_path
+        self.max_leads = max_leads
+        self.padded_image_size = padded_image_size
 
-# Load the image
-img = Image.open(f"./{d['file_name']}.jpg")
+    def __len__(self):
+        return len(self.logs)
 
-# Plot the image
-plt.close('all')
-plt.imshow(img)
-plt.axis('off')  # Turn off axis
-plt.savefig("o.png")
-# plt.show()
+    def __getitem__(self, idx):
+        log = self.logs[idx]
+        image_path = log['image_name']
+        image = plt.imread(f"{self.image_path}/{image_path}.jpg")
 
+        # Resize the image to the specified size
+        image = cv2.resize(image, self.padded_image_size)
 
-plt.close('all')
-img = plt.imread(f"./{d['file_name']}.jpg")
-plt.imshow(img) 
-plt.savefig("o.png")
+        # Pad the image if necessary
+        if image.shape[0] < self.padded_image_size[0] or image.shape[1] < self.padded_image_size[1]:
+            pad_height = max(self.padded_image_size[0] - image.shape[0], 0)
+            pad_width = max(self.padded_image_size[1] - image.shape[1], 0)
+            image = np.pad(image, ((0, pad_height), (0, pad_width), (0, 0)), mode='constant')
 
-height, width, layers = img.shape
+        # Crop the image if necessary
+        if image.shape[0] > self.padded_image_size[0] or image.shape[1] > self.padded_image_size[1]:
+            image = image[:self.padded_image_size[0], :self.padded_image_size[1], :]
 
-y_min, y_max, x_min, x_max = d['y_min'], d['y_max'], d['x_min'], d['x_max']
-log_height, log_width = y_max - y_min, x_max - x_min
+        bounding_boxes = return_bounding_boxes(image, log)
+        bounding_boxes = np.array(bounding_boxes)
 
-plt.close('all')
-fig, ax = plt.subplots()
-ax.imshow(img)
-for l in d['leads']:
-    min_x_plot, max_x_plot, min_y_plot, max_y_plot = l['min_x_plot'], l['max_x_plot'], l['min_y_plot'], l['max_y_plot']
+        # Pad the bounding boxes to (13, 4)
+        padded_bounding_boxes = np.pad(bounding_boxes, ((0, 13 - len(bounding_boxes)), (0, 0)), mode='constant')
+        bounding_boxes = padded_bounding_boxes[:13]
 
-    lead_start_x = (min_x_plot-x_min)/log_width * width
-    lead_end_x = (1-(x_max-max_x_plot)/log_width) * width
+        return image, bounding_boxes
 
-    lead_start_y = (1-(min_y_plot-y_min)/log_height) * height
-    lead_end_y = ((y_max-max_y_plot)/log_height) * height
-
-    rec = patches.Rectangle((lead_start_x, lead_start_y), lead_end_x-lead_start_x, lead_end_y-lead_start_y, linewidth=0.4, edgecolor='red', facecolor='none')
-    ax.add_patch(rec)
-plt.savefig("o.png", dpi=200)
-
-
+if __name__ == '__main__':
+    # path = f"{os.getenv('signal_dataset_path')}image_dataset_v4.0/"
+    path = "datasets/image_dataset_v4.0/"
+    dataset = ECGDataset(image_path=path, log_path=f"{path}logs.json")
+    dataloader = DataLoader(dataset, batch_size=32, shuffle=True)
+    for images, bounding_boxes in dataloader:
+        # Process the batch of images and bounding boxes
+        print(images.shape, bounding_boxes.shape)
