@@ -129,13 +129,18 @@ def plot(
     
     d_column = 40/45*mm
     # determine figure size 
-    fig_width = (3.25)*5*mm + 25*secs*columns*mm + (columns-1)*d_column + (7)*5*mm   # added
+    n_empty_cell_at_left = 3.25   # number of free cells at the least left
+    n_empty_cell_at_right = 7 
+    n_empty_cell_at_up = 4 
+    n_empty_cell_at_down = 4
+    fig_width = (n_empty_cell_at_left)*5*mm + 25*secs*columns*mm + (columns-1)*d_column + (n_empty_cell_at_right)*5*mm   # added
     if full_ecg_name:
-        fig_height = (4+4)*5*mm + (rows)*row_height*5*mm + 0.05   # added
+        fig_height = (n_empty_cell_at_up + n_empty_cell_at_down)*5*mm + (rows)*row_height*5*mm + 0.05   # added
     else:
-        fig_height = (4+4)*5*mm + (rows-1)*row_height*5*mm    # added
+        fig_height = (n_empty_cell_at_up + n_empty_cell_at_down)*5*mm + (rows-1)*row_height*5*mm    # added
+
     figsize = (fig_width, fig_height)  # added
-    fig, ax = plt.subplots(figsize=figsize, frameon=True, dpi= 700)
+    fig, ax = plt.subplots(figsize=figsize, dpi= 700)
 
     # fig.subplots_adjust(
     #     hspace = 0, 
@@ -149,13 +154,13 @@ def plot(
     fig.suptitle(title)
 
     
-    x_min = -0.65                                              # changed to put free space (3 cell which is equal to 0.6 seconds or 15 milimeters) in the left part of the least left lead   چپ ترین
-    x_max = columns*secs + (columns-1)*40/45*0.2 + 1.4       # changed  to put free space in the right part of the most right lead   راست ترین
+    x_min = - 0.2 * n_empty_cell_at_left                                            # changed to put free space (3 cell which is equal to 0.6 seconds or 15 milimeters) in the left part of the least left lead   چپ ترین
+    x_max = columns*secs + (columns-1)*40/45*0.2 + (n_empty_cell_at_right * 0.2)         # changed  to put free space in the right part of the most right lead   راست ترین
     if full_ecg_name:
-        y_min = -3 - (rows)*row_height*0.5         # changed to put free space in the down of the picture 
+        y_min = - 0.5*(n_empty_cell_at_down + 2) - (rows)*row_height*0.5         # changed to put free space in the down of the picture 
     else:
-        y_min = -2 - (rows-1)*row_height*0.5
-    y_max = 2                                 # changed to put free space in the above of the picture
+        y_min = -0.5*(n_empty_cell_at_down) - (rows-1)*row_height*0.5
+    y_max = 0.5 * (n_empty_cell_at_down)                                 # changed to put free space in the above of the picture
 
     if (style == 'bw'):
         color_major = (0.4,0.4,0.4)
@@ -165,7 +170,7 @@ def plot(
         color_major = (0.75, 0.5, 0.5) # red            # changed to have different grid line
         color_minor = (1, 0.93, 0.93)                   # changed
         color_line  = (0,0,0) # black                   # changed
-
+    
     if(show_grid):
         ax.set_xticks(np.arange(x_min,x_max,0.2))    
         ax.set_yticks(np.arange(y_min,y_max,0.5))
@@ -277,6 +282,7 @@ def plot(
             "ecg": list(full_ecg),
         })
 
+
     return output_log
         
 
@@ -354,5 +360,5 @@ def save_as_jpg(file_name, path = DEFAULT_PATH, dpi=200):
         path     : path to save image, defaults to current folder
     """
     plt.ioff()
-    plt.savefig(path + file_name + '.jpg',  dpi = dpi)
+    plt.savefig(path + file_name + '.jpg',  dpi = dpi, bbox_inches='tight')
     plt.close()
