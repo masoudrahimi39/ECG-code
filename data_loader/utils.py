@@ -1,6 +1,8 @@
 import matplotlib.pyplot as plt
 from PIL import Image
 import matplotlib.patches as patches
+import os
+import json
 
 def return_bounding_boxes(img, log):
     height, width, layers = img.shape
@@ -34,3 +36,11 @@ def plot_bounding_boxes(img, log, save_path):
         rec = patches.Rectangle((bb[0], bb[1]), bb[2], bb[3], linewidth=0.4, edgecolor='red', facecolor='none')
         ax.add_patch(rec)
     plt.savefig(save_path, dpi=200)
+
+if __name__ == '__main__':
+    path = "datasets/image_dataset_v4.0/train/"
+    with open(f"{path}logs.json", 'r') as f:
+        logs = json.load(f)['samples']
+    log = logs[0]
+    img = plt.imread(f"{path}{log['image_name']}.jpg")
+    plot_bounding_boxes(img, log, "./tmp.jpg")    

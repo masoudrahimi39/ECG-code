@@ -68,12 +68,12 @@ path_to_save_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_ver
 if os.path.exists(path_to_save_dataset):
     shutil.rmtree(path_to_save_dataset)   # remove the directory
 
-    os.makedirs(path_to_save_dataset)
-    # Create child directories: test, train, val
-    os.makedirs(os.path.join(path_to_save_dataset, "test"))
-    os.makedirs(os.path.join(path_to_save_dataset, "train"))
-    os.makedirs(os.path.join(path_to_save_dataset, "val"))
-    print(f'directory {path_to_save_dataset} created.')
+os.makedirs(path_to_save_dataset)
+# Create child directories: test, train, val
+os.makedirs(os.path.join(path_to_save_dataset, "test"))
+os.makedirs(os.path.join(path_to_save_dataset, "train"))
+os.makedirs(os.path.join(path_to_save_dataset, "val"))
+print(f'directory {path_to_save_dataset} created.')
 
 
 row_height = 6.265
