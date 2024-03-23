@@ -4,4 +4,5 @@ wfdb
 ast
 random
 matplotlib
-python-dotenv
+python-dotenv 
+ultralytics          # the library including YOLO model
