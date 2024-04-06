@@ -82,6 +82,168 @@ def plot_12(
        
         _ax_plot(t_ax, np.arange(0, len(ecg[t_lead])*step, step), ecg[t_lead], seconds)
 
+def plot_revised(
+        ecg, 
+        full_ecg_name,        # changed to let us have (or don't have) full ecg in the printed format
+        full_ecg,             # changed
+        
+        sample_rate    = 500, 
+        title          = 'ECG 12', 
+        lead_index     = lead_index, 
+        lead_order     = None,
+        style          = None,
+        columns        = 2,
+        row_height     = 6,
+        show_lead_name = True,
+        show_grid      = True,
+        show_separate_line  = True,
+        save_path: str = None
+        ):
+    """Plot multi lead ECG chart.
+    # Arguments
+        ecg        : m x n ECG signal data, which m is number of leads and n is length of signal.
+        full_ecg_name: the name of the full ecg. if `None`, then no lead wil be printed completely.
+        full_ecg   : signal of the lead that you want to be printed completely. It works if full_ecg_name is assigned
+        
+        sample_rate: Sample rate of the signal.
+        title      : Title which will be shown on top off chart
+        lead_index : Lead name array in the same order of ecg, will be shown on 
+            left of signal plot, defaults to ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']
+        lead_order : Lead display order 
+        columns    : display columns, defaults to 2
+        style      : display style, defaults to None, can be 'bw' which means black white
+        row_height :   how many grid should a lead signal have,
+        show_lead_name : show lead name
+        show_grid      : show grid
+        show_separate_line  : show separate line
+        save_path : refers to the save path. if equals to None, it won't save the result. otherwise it saves the result in the defined path
+    """
+    horizontal_scale = 0.2 #s
+    vertical_scale = 0.5 #mv
+
+    fontsize = 4
+
+    num_columns = columns
+    num_rows = len(ecg)//num_columns
+
+    xrange_signals = np.arange(ecg.shape[1])/sample_rate/horizontal_scale
+    xrange_full = np.arange(full_ecg.shape[0])/sample_rate/horizontal_scale
+    range_horizontal = xrange_signals[-1] + 0.2
+    range_vertical = 6.5
+
+    x_min = -10
+    y_min = -15
+
+    x_max = range_horizontal*num_columns + 5
+    y_max = range_vertical*num_rows + 5
+
+    if (style == 'bw'):
+        color_major = (0.4,0.4,0.4)
+        color_minor = (0.75, 0.75, 0.75)
+        color_line  = (0,0,0)
+    else:
+        color_major = (0.75, 0.5, 0.5) # red            # changed to have different grid line
+        color_minor = (1, 0.93, 0.93)                   # changed
+        color_line  = (0,0,0) # black                   # changed
+
+    output_log = {
+        "y_min": y_min,
+        "y_max": y_max,
+        "x_min": x_min,
+        "x_max": x_max,
+        "horizontal_scale": horizontal_scale,
+        "vertical_scale": vertical_scale,
+        "leads": []
+    }
+
+    fig, ax = plt.subplots(dpi= 700)
+    for c in range(num_columns):
+        for r in range(num_rows):
+            idx = c*num_rows + r
+            sig = ecg[idx]/vertical_scale
+            vertical_starting_point = (num_rows-1-r)*range_vertical
+            
+            x_signal = xrange_signals+c*range_horizontal
+            y_signal = sig+vertical_starting_point
+
+            x_text = x_signal[0]
+            y_text = vertical_starting_point+2
+
+            ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
+            
+            ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
+
+            output_log['leads'].append({
+                "min_x_plot": min(x_signal),
+                "max_x_plot": max(x_signal),
+                "min_y_plot": min(y_signal),
+                "max_y_plot": max(y_signal),
+                "x_text": x_text,
+                "y_text": y_text,
+                "fontsize": fontsize,
+                "text": lead_index[idx],
+                "ecg": list(sig),
+            })
+
+    if full_ecg_name:
+        sig = full_ecg/vertical_scale
+        vertical_starting_point = -1*range_vertical
+
+        x_signal = xrange_full
+        y_signal = sig+vertical_starting_point
+
+        x_text = x_signal[0]
+        y_text = vertical_starting_point+2
+
+        ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
+
+        ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
+
+        output_log['leads'].append({
+            "min_x_plot": min(x_signal),
+            "max_x_plot": max(x_signal),
+            "min_y_plot": min(y_signal),
+            "max_y_plot": max(y_signal),
+            "x_text": x_text,
+            "y_text": y_text,
+            "fontsize": fontsize,
+            "text": full_ecg_name,
+            "ecg": list(sig),
+        })
+
+    ax.set_xticks(np.arange(x_min,x_max,1))
+    ax.set_yticks(np.arange(y_min,y_max,1))
+    # disable the xtickslabels
+    ax.set_xticklabels([])                    # changed
+    ax.set_yticklabels([])                    # changed
+
+    # disable the frame around the plot
+    ax.spines['top'].set_color('none')        # changed
+    ax.spines['bottom'].set_color('none')     # changed
+    ax.spines['left'].set_color('none')       # changed
+    ax.spines['right'].set_color('none')      # changed
+
+    # disable the minor and major ticks
+    ax.tick_params(which='both', width=2, color='none')   # changed
+
+    ax.minorticks_on()  
+    ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+
+    ax.grid(which='major', linestyle='-', linewidth=0.5, color=color_major)
+    ax.grid(which='minor', linestyle='-', linewidth=0.5, color=color_minor)
+
+    ax.set_aspect('equal')
+    # plt.axis('off')
+    ax.set_xlim(x_min, x_max)
+    ax.set_ylim(y_min, y_max)
+    fig.tight_layout(pad=0)
+    if isinstance(save_path, str):
+        plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+        plt.close()
+        output_log["save_path"] = save_path
+    return output_log
+
+
 def plot(
         ecg, 
         full_ecg_name,        # changed to let us have (or don't have) full ecg in the printed format

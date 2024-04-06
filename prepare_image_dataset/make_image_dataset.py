@@ -100,8 +100,11 @@ for lead_format, each_lead_config in lead_config.items():
         elif ceil((val_prcnt+train_prcnt)*n_sample_each_lead) <= cnt2 :
             dtset_type = 'test'
         
+        file_name = str(i)+'_'+lead_format+".jpg"
+        file_path = os.path.join(path_to_save_dataset, dtset_type,file_name)
+
         logs[dtset_type].append(
-            ecg_plot_v2.plot(
+            ecg_plot_v2.plot_revised(
                 ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
                 full_ecg=X[i, :, 1].T, 
                 full_ecg_name=each_lead_config['full_ecg_name'],
@@ -114,12 +117,12 @@ for lead_format, each_lead_config in lead_config.items():
                 show_grid=True, 
                 show_separate_line=True,
                 row_height=row_height,
-                style=None)
+                style=None,
+                save_path=file_path)
         )
-        file_name = str(i)+'_'+lead_format
-        logs[dtset_type][-1]["image_name"] = file_name
+        # logs[dtset_type][-1]["image_name"] = file_name
 
-        ecg_plot_v2.save_as_jpg(file_name, path=os.path.join(path_to_save_dataset, dtset_type + '/'), dpi=100)
+        # ecg_plot_v2.save_as_jpg(file_name, path=os.path.join(path_to_save_dataset, dtset_type + '/'), dpi=100)
         plt.close()
         cnt2 +=1
 
