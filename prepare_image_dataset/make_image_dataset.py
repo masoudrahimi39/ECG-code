@@ -104,7 +104,7 @@ for lead_format, each_lead_config in lead_config.items():
         file_path = os.path.join(path_to_save_dataset, dtset_type,file_name)
 
         logs[dtset_type].append(
-            ecg_plot_v2.plot_revised(
+            ecg_plot_v2.plot_v3(
                 ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
                 full_ecg=X[i, :, 1].T, 
                 full_ecg_name=each_lead_config['full_ecg_name'],

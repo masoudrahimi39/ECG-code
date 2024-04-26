@@ -82,7 +82,7 @@ def plot_12(
        
         _ax_plot(t_ax, np.arange(0, len(ecg[t_lead])*step, step), ecg[t_lead], seconds)
 
-def plot_revised(
+def plot_v3(
         ecg, 
         full_ecg_name,        # changed to let us have (or don't have) full ecg in the printed format
         full_ecg,             # changed
@@ -121,7 +121,7 @@ def plot_revised(
     horizontal_scale = 0.2 #s
     vertical_scale = 0.5 #mv
 
-    fontsize = 4
+    fontsize = 6
 
     num_columns = columns
     num_rows = len(ecg)//num_columns
@@ -129,13 +129,25 @@ def plot_revised(
     xrange_signals = np.arange(ecg.shape[1])/sample_rate/horizontal_scale
     xrange_full = np.arange(full_ecg.shape[0])/sample_rate/horizontal_scale
     range_horizontal = xrange_signals[-1] + 0.2
-    range_vertical = 6.5
+    # range_vertical = 6
 
-    x_min = -10
-    y_min = -15
+    n_empty_cell_at_left = 3.25   # number of free cells at the least left
+    n_empty_cell_at_right = 3 
+    n_empty_cell_at_up = 6
+    n_empty_cell_at_down = 6
 
-    x_max = range_horizontal*num_columns + 5
-    y_max = range_vertical*num_rows + 5
+    x_min = -n_empty_cell_at_left
+    y_min = -n_empty_cell_at_down
+
+    x_max = range_horizontal*num_columns + n_empty_cell_at_right
+    y_max = row_height*(num_rows-1) + n_empty_cell_at_up
+
+
+    if full_ecg_name:
+        y_min -= row_height
+
+    print(save_path, y_max, row_height, num_rows, n_empty_cell_at_up, range_horizontal, num_columns)
+    print(x_min, x_max, y_min, y_max)
 
     if (style == 'bw'):
         color_major = (0.4,0.4,0.4)
@@ -161,7 +173,7 @@ def plot_revised(
         for r in range(num_rows):
             idx = c*num_rows + r
             sig = ecg[idx]/vertical_scale
-            vertical_starting_point = (num_rows-1-r)*range_vertical
+            vertical_starting_point = (num_rows-1-r)*row_height
             
             x_signal = xrange_signals+c*range_horizontal
             y_signal = sig+vertical_starting_point
@@ -187,7 +199,7 @@ def plot_revised(
 
     if full_ecg_name:
         sig = full_ecg/vertical_scale
-        vertical_starting_point = -1*range_vertical
+        vertical_starting_point = -1*row_height
 
         x_signal = xrange_full
         y_signal = sig+vertical_starting_point
