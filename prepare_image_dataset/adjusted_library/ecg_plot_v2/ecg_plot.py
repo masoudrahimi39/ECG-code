@@ -146,9 +146,6 @@ def plot_v3(
     if full_ecg_name:
         y_min -= row_height
 
-    print(save_path, y_max, row_height, num_rows, n_empty_cell_at_up, range_horizontal, num_columns)
-    print(x_min, x_max, y_min, y_max)
-
     if (style == 'bw'):
         color_major = (0.4,0.4,0.4)
         color_minor = (0.75, 0.75, 0.75)
