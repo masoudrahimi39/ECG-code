@@ -58,7 +58,7 @@ else:
 
 ### convert the signal to ecg image
 dataset_version = 4 
-n_sample_each_lead = 17       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+n_sample_each_lead = 10       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
@@ -67,13 +67,12 @@ test_prcnt = 0.2
 path_to_save_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/'
 if os.path.exists(path_to_save_dataset):
     shutil.rmtree(path_to_save_dataset)   # remove the directory
-
-    os.makedirs(path_to_save_dataset)
-    # Create child directories: test, train, val
-    os.makedirs(os.path.join(path_to_save_dataset, "test"))
-    os.makedirs(os.path.join(path_to_save_dataset, "train"))
-    os.makedirs(os.path.join(path_to_save_dataset, "val"))
-    print(f'directory {path_to_save_dataset} created.')
+os.makedirs(path_to_save_dataset)
+# Create child directories: test, train, val
+os.makedirs(os.path.join(path_to_save_dataset, "test"))
+os.makedirs(os.path.join(path_to_save_dataset, "train"))
+os.makedirs(os.path.join(path_to_save_dataset, "val"))
+print(f'directory {path_to_save_dataset} created.')
 
 
 row_height = 6.265
@@ -101,7 +100,8 @@ for lead_format, each_lead_config in lead_config.items():
             dtset_type = 'test'
         
         file_name = str(i)+'_'+lead_format+".jpg"
-        file_path = os.path.join(path_to_save_dataset, dtset_type,file_name)
+        file_path = path_to_save_dataset + dtset_type + '/' + file_name
+    
 
         logs[dtset_type].append(
             ecg_plot_v2.plot_v3(
