@@ -247,10 +247,8 @@ def plot_v3(
     ax.set_ylim(y_min, y_max)
     fig.tight_layout(pad=0)
     if isinstance(save_path, str):
-        plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
-        plt.close()
         output_log["save_path"] = save_path
-    return output_log
+    return output_log   
 
 
 def plot(
@@ -524,12 +522,12 @@ def save_as_svg(file_name, path = DEFAULT_PATH):
     plt.savefig(path + file_name + '.svg')
     plt.close()
 
-def save_as_jpg(file_name, path = DEFAULT_PATH, dpi=200):
+def save_as_jpg(save_path):
     """Plot multi lead ECG chart.
     # Arguments
         file_name: file_name
         path     : path to save image, defaults to current folder
     """
     plt.ioff()
-    plt.savefig(path + file_name + '.jpg',  dpi = dpi, bbox_inches='tight')
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
     plt.close()

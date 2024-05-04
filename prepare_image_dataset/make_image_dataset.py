@@ -120,10 +120,12 @@ for lead_format, each_lead_config in lead_config.items():
                 style=None,
                 save_path=file_path)
         )
-        # logs[dtset_type][-1]["image_name"] = file_name
 
-        # ecg_plot_v2.save_as_jpg(file_name, path=os.path.join(path_to_save_dataset, dtset_type + '/'), dpi=100)
-        plt.close()
+        #TODO: determine bounding_box should be called to generate label
+
+
+        ecg_plot_v2.save_as_jpg(file_path)
+        
         cnt2 +=1
 
     cnt += n_sample_each_lead
