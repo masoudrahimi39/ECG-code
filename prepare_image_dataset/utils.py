@@ -154,7 +154,7 @@ def draw_bb(sample: dict, export_path: str):
     img_height = img_size[0]
 
     plt.imshow(img)
-    for _, x, y, w, h in determine_bb(sample, False):
+    for _, x, y, w, h in determine_bb_from_saved_image(sample, False):
         lead_width = w*img_width
         lead_height = h*img_height
         plt.gca().add_patch(plt.Rectangle((x*img_width-lead_width/2, y*img_height+lead_height/2),\
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     log_path = "datasets/image_dataset_v4.0/train/"
     with open(f"{log_path}logs.json", 'r') as f:
         logs = json.load(f)
-    determine_bb_from_saved_image(logs['samples'][13], True)
-    draw_bb(logs['samples'][13], "2.jpg")
+    determine_bb_from_saved_image(logs['samples'][1], True)
+    draw_bb(logs['samples'][1], "2.jpg")
 
 
