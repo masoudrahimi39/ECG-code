@@ -10,6 +10,7 @@ from math import ceil
 import shutil
 sys.path.append("./prepare_image_dataset/adjusted_library")  # in order to import the adjusted "ecg_plot" library
 import ecg_plot_v2
+from utils import determine_bb_online
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -99,9 +100,10 @@ for lead_format, each_lead_config in lead_config.items():
         elif ceil((val_prcnt+train_prcnt)*n_sample_each_lead) <= cnt2 :
             dtset_type = 'test'
         
-        file_name = str(i)+'_'+lead_format+".jpg"
+        file_name = str(i)+'_'+lead_format+'.jpg'
+        label_name = str(i)+'_'+lead_format+'.txt'
         file_path = path_to_save_dataset + dtset_type + '/' + file_name
-    
+        labe_path = path_to_save_dataset + dtset_type + '/' + label_name
 
         logs[dtset_type].append(
             ecg_plot_v2.plot_v3(
@@ -121,11 +123,14 @@ for lead_format, each_lead_config in lead_config.items():
                 save_path=file_path)
         )
 
-        #TODO: determine bounding_box should be called to generate label
-
+        # convert the ploted image to an np.array in order to have the image array
+        fig = plt.gcf()
+        fig.canvas.draw()
+        image_array = np.array(fig.canvas.renderer._renderer)
+        determine_bb_online(sample=logs[dtset_type][-1], img_array=image_array, save_bb_path=labe_path)
 
         ecg_plot_v2.save_as_jpg(file_path)
-        
+
         cnt2 +=1
 
     cnt += n_sample_each_lead

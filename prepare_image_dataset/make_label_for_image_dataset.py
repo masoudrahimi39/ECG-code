@@ -4,7 +4,7 @@ import json
 import matplotlib.pyplot as plt
 import os
 from dotenv import load_dotenv
-from utils import determine_bb
+from utils import determine_bb_from_saved_image
 load_dotenv()
 
 dataset_version = 4 
@@ -24,7 +24,7 @@ for subdir in os.listdir(img_dataset_dir):
                 # iterate over samples in the log file (each sample is )
                 for img in logs_data['samples']:
                     # save a text file containing labels
-                    determine_bb(sample=img, save_bb=True)
+                    determine_bb_from_saved_image(sample=img, save_bb=True)
         else:
             print('logs.json file is not available')
 
