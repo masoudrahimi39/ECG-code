@@ -17,7 +17,7 @@ def determine_bb_from_saved_image(sample: dict, save_bb: bool):
     label_path = file_path.replace(file_name + '.jpg', '')
 
     img = plt.imread(file_path)
-    img = img[34:, :-34, :]
+    img = img[:-34, 34:, :]
     img_size = img.shape
     
     img_width = img_size[1]
@@ -85,7 +85,7 @@ def determine_bb_online(sample: dict, img_array, save_bb_path: str):
     # label_path = file_path.replace(file_name + '.jpg', '')
 
     # img = plt.imread(file_path)
-    img_array = img_array[34:, :-34, :]   # we have white border in the left and down of the image, so these borders are removed here
+    img_array = img_array[:-34, 34:, :]   # we have white border in the left and down of the image, so these borders are removed here
     img_size = img_array.shape
     
     img_width = img_size[1]
@@ -148,7 +148,7 @@ def draw_bb(sample: dict, export_path: str):
     """
     file_path = sample['save_path']
     img = plt.imread(file_path)
-    img = img[34:, :-34, :]
+    img = img[:-34, 34:, :]
     img_size = img.shape
     img_width = img_size[1]
     img_height = img_size[0]
