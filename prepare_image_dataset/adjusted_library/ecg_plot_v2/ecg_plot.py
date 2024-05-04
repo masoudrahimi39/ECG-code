@@ -194,6 +194,10 @@ def plot_v3(
                 "ecg": list(ecg[idx]),
             })
 
+            if c:
+                ax.plot([x_signal[0], x_signal[0]], [y_signal[0] - 0.6, y_signal[0] - 0.2], linewidth='0.5', color=color_line)  # changed
+                ax.plot([x_signal[0], x_signal[0]], [y_signal[0] + 0.2, y_signal[0] + 0.6], linewidth='0.5', color=color_line)  # changed
+
     if full_ecg_name:
         sig = full_ecg/vertical_scale
         vertical_starting_point = -1*row_height
