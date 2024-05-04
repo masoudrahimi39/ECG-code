@@ -191,7 +191,7 @@ def plot_v3(
                 "y_text": y_text,
                 "fontsize": fontsize,
                 "text": lead_index[idx],
-                "ecg": list(sig),
+                "ecg": list(ecg[idx]),
             })
 
     if full_ecg_name:
@@ -217,7 +217,7 @@ def plot_v3(
             "y_text": y_text,
             "fontsize": fontsize,
             "text": full_ecg_name,
-            "ecg": list(sig),
+            "ecg": list(full_ecg),
         })
 
     ax.set_xticks(np.arange(x_min,x_max,1))
