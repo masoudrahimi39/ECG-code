@@ -191,8 +191,12 @@ def plot_v3(
                 "y_text": y_text,
                 "fontsize": fontsize,
                 "text": lead_index[idx],
-                "ecg": list(sig),
+                "ecg": list(ecg[idx]),
             })
+
+            if c:
+                ax.plot([x_signal[0], x_signal[0]], [y_signal[0] - 0.6, y_signal[0] - 0.2], linewidth='0.5', color=color_line)  # changed
+                ax.plot([x_signal[0], x_signal[0]], [y_signal[0] + 0.2, y_signal[0] + 0.6], linewidth='0.5', color=color_line)  # changed
 
     if full_ecg_name:
         sig = full_ecg/vertical_scale
@@ -217,7 +221,7 @@ def plot_v3(
             "y_text": y_text,
             "fontsize": fontsize,
             "text": full_ecg_name,
-            "ecg": list(sig),
+            "ecg": list(full_ecg),
         })
 
     ax.set_xticks(np.arange(x_min,x_max,1))
