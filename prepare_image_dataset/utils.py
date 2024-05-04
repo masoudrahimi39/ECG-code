@@ -87,7 +87,7 @@ def draw_bb(sample: dict, export_path: str):
     """
     file_path = sample['save_path']
     img = plt.imread(file_path)
-    img = img[34:, :-34, :]
+    img = img[:-34, 34:, :]
     img_size = img.shape
     img_width = img_size[1]
     img_height = img_size[0]
