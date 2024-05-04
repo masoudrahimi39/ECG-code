@@ -22,7 +22,7 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         file_name = file_path.split("/")[-1].split(".jpg")[0]
         img_array = plt.imread(file_path)
     elif mode == 'online':
-        img_array = img_array[34:, :-34, :]   # we have white border in the left and down of the image, so these borders are removed here
+        img_array = img_array[:-34, 34:, :]   # we have white border in the left and down of the image, so these borders are removed here
     
     
     img_size = img_array.shape
@@ -87,7 +87,7 @@ def draw_bb(sample: dict, export_path: str):
     """
     file_path = sample['save_path']
     img = plt.imread(file_path)
-    img = img[34:, :-34, :]
+    img = img[:-34, 34:, :]
     img_size = img.shape
     img_width = img_size[1]
     img_height = img_size[0]
