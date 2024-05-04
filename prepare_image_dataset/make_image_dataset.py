@@ -10,7 +10,7 @@ from math import ceil
 import shutil
 sys.path.append("./prepare_image_dataset/adjusted_library")  # in order to import the adjusted "ecg_plot" library
 import ecg_plot_v2
-from utils import determine_bb_online
+from utils import determine_bb
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -59,7 +59,7 @@ else:
 
 ### convert the signal to ecg image
 dataset_version = 4 
-n_sample_each_lead = 10       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+n_sample_each_lead = 3       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
@@ -127,7 +127,7 @@ for lead_format, each_lead_config in lead_config.items():
         fig = plt.gcf()
         fig.canvas.draw()
         image_array = np.array(fig.canvas.renderer._renderer)
-        determine_bb_online(sample=logs[dtset_type][-1], img_array=image_array, save_bb_path=labe_path)
+        determine_bb(sample=logs[dtset_type][-1], mode='online', save_bb_path=labe_path, img_array=image_array)
 
         ecg_plot_v2.save_as_jpg(file_path)
 
