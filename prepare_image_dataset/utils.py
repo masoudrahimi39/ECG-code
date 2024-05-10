@@ -4,6 +4,8 @@ import json
 import matplotlib.pyplot as plt
 import cv2
 
+text_dict = {'I': 1, 'II': 2, 'III': 3, 'aVR': 4, 'aVL': 5, 'aVF': 6, 'V1': 7, 'V2': 8, 'V3': 9, 'V4':10, 'V5':11, 'V6':12}
+
 def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
     """"
     Determine the bounding box; it received logs of a sample, but the imgae was loaded before calling this function.
@@ -50,6 +52,8 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         lead_fontsize = lead['fontsize']
         lead_text = lead['text']
         
+        text_x0, text_y0, text_width, text_height = lead['bbox']
+        
         width_lead = max_x_plot - min_x_plot
         height_lead = max_y_plot - min_y_plot
         
@@ -65,7 +69,12 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         w = int(width_lead_ratio * img_width) 
         h = int(height_lead_ratio * img_height) 
         
+        x_text_ratio = (lead_x_text-x_min)/width
+        y_text_ratio = (lead_y_text-y_min)/height
+
         label.append((0,(x+w/2)/img_width, (y-h/2)/img_height, w/img_width, h/img_height))
+
+        label.append((text_dict[lead_text], x_text_ratio+text_width/2/img_width, 1-y_text_ratio-1.5*text_height/img_height, text_width/img_width, text_height/img_height))
 
     if save_bb_path:
         # change the format of the label in order to write all of the label in one flush rather than writing each line seperately.
@@ -108,7 +117,8 @@ if __name__ == "__main__":
     log_path = "datasets/image_dataset_v4.0/train/"
     with open(f"{log_path}logs.json", 'r') as f:
         logs = json.load(f)
-    determine_bb(sample=logs['samples'][1], mode='load_image', save_bb_path=None, img_array=None)
-    draw_bb(logs['samples'][1], "2.jpg")
+    # determine_bb(sample=logs['samples'][1], mode='load_image', save_bb_path=None, img_array=None)
+    for i in range(3):
+        draw_bb(logs['samples'][i], f"{i}.jpg")
 
 
