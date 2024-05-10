@@ -180,7 +180,7 @@ def plot_v3(
 
             ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
             
-            ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
+            bbox = ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
 
             output_log['leads'].append({
                 "min_x_plot": min(x_signal),
@@ -189,6 +189,7 @@ def plot_v3(
                 "max_y_plot": max(y_signal),
                 "x_text": x_text,
                 "y_text": y_text,
+                "bbox": bbox,
                 "fontsize": fontsize,
                 "text": lead_index[idx],
                 "ecg": list(ecg[idx]),
@@ -210,7 +211,7 @@ def plot_v3(
 
         ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
 
-        ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
+        bbox = ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
 
         output_log['leads'].append({
             "min_x_plot": min(x_signal),
@@ -219,6 +220,7 @@ def plot_v3(
             "max_y_plot": max(y_signal),
             "x_text": x_text,
             "y_text": y_text,
+            "bbox": bbox,
             "fontsize": fontsize,
             "text": full_ecg_name,
             "ecg": list(full_ecg),
@@ -252,6 +254,12 @@ def plot_v3(
     fig.tight_layout(pad=0)
     if isinstance(save_path, str):
         output_log["save_path"] = save_path
+    
+    renderer = fig.canvas.get_renderer()
+    for l in output_log['leads']:
+        bbox = l['bbox'].get_window_extent(renderer=renderer)
+        l['bbox'] = (bbox.x0, bbox.y0, bbox.width, bbox.height)
+
     return output_log   
 
 
