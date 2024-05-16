@@ -1,29 +1,28 @@
 from ultralytics import YOLO
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 dataset_path = os.getenv("image_dataset_path")
+classes = json.loads(os.getenv("labels_dict"))
+classes = {v:k for k, v in classes.items()}
 
 def make_config():
     # making the configuration file
     import yaml
 
     configuration={
-    "path": dataset_path,
-    "train": dataset_path + "/train",
-    "test": dataset_path + "/test",
-    "val": dataset_path + "/val",
-    "names": {
-        0: "lead"
-        1: "lead_name"
-    }
+        "path": os.path.abspath(dataset_path),
+        "train": os.path.abspath(dataset_path + "/train"),
+        "test": os.path.abspath(dataset_path + "/test"),
+        "val": os.path.abspath(dataset_path + "/val"),
+        "names": classes
     }
 
-    config_path = os.path.join(dataset_path, "config.yaml")
-
-    with open(config_path, "w") as file:
+    with open("./model/config.yaml", "w") as file:
         documents = yaml.dump(configuration, file)
-model = YOLO('yolov8n.pt')
 
-results = model.train(data='coco8.yaml', epochs=100, imgsz=640)
+model = YOLO('./yolov8n.pt')
+print(next(os.walk("./")))
+results = model.train(data='./model/config.yaml', epochs=100, imgsz=640)
