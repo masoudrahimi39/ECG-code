@@ -3,6 +3,12 @@ from dotenv import load_dotenv
 import os
 import json
 
+# import mlflow
+# from ultralytics import settings
+
+# # Update a setting; enable MLFlow
+# settings.update({'mlflow': True})
+
 load_dotenv()
 dataset_path = os.getenv("image_dataset_path")
 classes = json.loads(os.getenv("labels_dict"))
@@ -23,6 +29,14 @@ def make_config():
     with open("./model/config.yaml", "w") as file:
         documents = yaml.dump(configuration, file)
 
-model = YOLO('./yolov8n.pt')
-print(next(os.walk("./")))
-results = model.train(data='./model/config.yaml', epochs=100, imgsz=640)
+make_config()
+model = YOLO('./model/yolov8n.pt')
+# print(next(os.walk("./")))
+# ultralytics train doc https://docs.ultralytics.com/modes/train/#train-settings
+# exist_ok = False
+results = model.train(data='./model/config.yaml', epochs=1, imgsz=640, save=True, resume=False, batch=16,
+                      project='./model/alaki_1', name='alaki_2', optimizer='auto', pose=0, kobj=0,
+                      device='cpu',
+                      exist_ok=False,
+                      pretrained=False,
+                       )
