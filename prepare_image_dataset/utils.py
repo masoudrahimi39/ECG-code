@@ -3,8 +3,11 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 import cv2
+from dotenv import load_dotenv
+import json
 
-text_dict = {'I': 1, 'II': 2, 'III': 3, 'aVR': 4, 'aVL': 5, 'aVF': 6, 'V1': 7, 'V2': 8, 'V3': 9, 'V4':10, 'V5':11, 'V6':12}
+load_dotenv()
+text_dict = json.loads(os.getenv("labels_dict"))
 
 def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
     """"
