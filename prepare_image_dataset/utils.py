@@ -75,9 +75,21 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         x_text_ratio = (lead_x_text-x_min)/width
         y_text_ratio = (lead_y_text-y_min)/height
 
-        label.append((0,(x+w/2)/img_width, (y-h/2)/img_height, w/img_width, h/img_height))
+        label.append((
+            0,
+            (x+w/2)/img_width,
+            (y+h/2)/img_height,
+            w/img_width,
+            h/img_height
+        ))
 
-        label.append((text_dict[lead_text], x_text_ratio+text_width/2/img_width, 1-y_text_ratio-1.5*text_height/img_height, text_width/img_width, text_height/img_height))
+        label.append((
+            text_dict[lead_text],
+            x_text_ratio+text_width/2/img_width,
+            1-y_text_ratio-0.5*text_height/img_height,
+            text_width/img_width,
+            text_height/img_height
+        ))
 
     if save_bb_path:
         # change the format of the label in order to write all of the label in one flush rather than writing each line seperately.
@@ -108,7 +120,7 @@ def draw_bb(sample: dict, export_path: str):
     for _, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
         lead_width = w*img_width
         lead_height = h*img_height
-        plt.gca().add_patch(plt.Rectangle((x*img_width-lead_width/2, y*img_height+lead_height/2),\
+        plt.gca().add_patch(plt.Rectangle((x*img_width-lead_width/2, y*img_height-lead_height/2),\
                 lead_width, lead_height, edgecolor='g', linewidth=0.3, fill=False))
     plt.show()
     plt.savefig(export_path, dpi=300)
@@ -117,11 +129,11 @@ def draw_bb(sample: dict, export_path: str):
 
 
 if __name__ == "__main__":
-    log_path = "datasets/image_dataset_v4.0/train/"
+    log_path = "datasets/image_dataset_v5.0/train/"
     with open(f"{log_path}logs.json", 'r') as f:
         logs = json.load(f)
     # determine_bb(sample=logs['samples'][1], mode='load_image', save_bb_path=None, img_array=None)
-    for i in range(3):
+    for i in range(4):
         draw_bb(logs['samples'][i], f"{i}.jpg")
 
 
