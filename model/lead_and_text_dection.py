@@ -1,13 +1,8 @@
-from ultralytics import YOLO
+from ultralytics import YOLO, settings
 from dotenv import load_dotenv
 import os
 import json
 
-# import mlflow
-# from ultralytics import settings
-
-# # Update a setting; enable MLFlow
-# settings.update({'mlflow': True})
 
 load_dotenv()
 dataset_path = os.getenv("image_dataset_path")
@@ -30,6 +25,13 @@ def make_config():
         documents = yaml.dump(configuration, file)
 
 make_config()
+
+# Update a setting; enable MLFlow
+settings.update({'mlflow': True})
+# os.environ["MLFLOW_TRACKING_URI"] = "sqlite:////Users/rezakarbasi/mlflow/mlflow.db"
+
+os.environ["MLFLOW_EXPERIMENT_NAME"] = "lead-training"
+
 model = YOLO('./model/yolov8n.pt')
 # print(next(os.walk("./")))
 # ultralytics train doc https://docs.ultralytics.com/modes/train/#train-settings
