@@ -57,9 +57,11 @@ else:
     print(f'all_signals_{sampling_rate}Hz.npy file loaded')
 
 
+dataset_type = 'yolo'
+# ds_generation_mode = 'unet'
 ### convert the signal to ecg image
-dataset_version = 4 
-n_sample_each_lead = 3       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+dataset_version = 5 
+n_sample_each_lead = 2       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
@@ -105,32 +107,51 @@ for lead_format, each_lead_config in lead_config.items():
         file_path = path_to_save_dataset + dtset_type + '/' + file_name
         labe_path = path_to_save_dataset + dtset_type + '/' + label_name
 
-        logs[dtset_type].append(
-            ecg_plot_v2.plot_v3(
-                ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
-                full_ecg=X[i, :, 1].T, 
-                full_ecg_name=each_lead_config['full_ecg_name'],
-                sample_rate=sampling_rate, 
-                columns=each_lead_config['n_column'],
-                lead_index=lead_index,
-                title='', 
-                lead_order=each_lead_config['lead_order'],
-                show_lead_name=True,
-                show_grid=True, 
-                show_separate_line=True,
-                row_height=row_height,
-                style=None,
-                save_path=file_path)
-        )
+        if dataset_type == 'unet':
+            logs[dtset_type].append(
+                ecg_plot_v2.plot_v3(
+                    ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+                    full_ecg=X[i, :, 1].T, 
+                    full_ecg_name=each_lead_config['full_ecg_name'],
+                    sample_rate=sampling_rate, 
+                    columns=each_lead_config['n_column'],
+                    lead_index=lead_index,
+                    title='', 
+                    lead_order=each_lead_config['lead_order'],
+                    show_lead_name=False,
+                    show_grid=False, 
+                    show_separate_line=False,
+                    row_height=row_height,
+                    style='bw',
+                    save_path=file_path)
+            )
 
-        # convert the ploted image to an np.array in order to have the image array
-        fig = plt.gcf()
-        fig.canvas.draw()
-        image_array = np.array(fig.canvas.renderer._renderer)
-        determine_bb(sample=logs[dtset_type][-1], mode='online', save_bb_path=labe_path, img_array=image_array)
+            ecg_plot_v2.save_as_jpg(file_path)
 
-        ecg_plot_v2.save_as_jpg(file_path)
-
+        elif dataset_type == 'yolo':
+            logs[dtset_type].append(
+                ecg_plot_v2.plot_v3(
+                    ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+                    full_ecg=X[i, :, 1].T, 
+                    full_ecg_name=each_lead_config['full_ecg_name'],
+                    sample_rate=sampling_rate, 
+                    columns=each_lead_config['n_column'],
+                    lead_index=lead_index,
+                    title='', 
+                    lead_order=each_lead_config['lead_order'],
+                    show_lead_name=True,
+                    show_grid=True, 
+                    show_separate_line=True,
+                    row_height=row_height,
+                    style=None,
+                    save_path=file_path)
+            )
+            # convert the ploted image to an np.array in order to have the image array
+            fig = plt.gcf()
+            fig.canvas.draw()
+            image_array = np.array(fig.canvas.renderer._renderer)
+            determine_bb(sample=logs[dtset_type][-1], mode='online', save_bb_path=labe_path, img_array=image_array)
+            ecg_plot_v2.save_as_jpg(file_path)
         cnt2 +=1
 
     cnt += n_sample_each_lead

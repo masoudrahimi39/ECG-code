@@ -149,11 +149,13 @@ def plot_v3(
     if (style == 'bw'):
         color_major = (0.4,0.4,0.4)
         color_minor = (0.75, 0.75, 0.75)
-        color_line  = (0,0,0)
+        color_line  = (1, 1, 1)
+        face_color = (0, 0, 0)
     else:
         color_major = (0.75, 0.5, 0.5) # red            # changed to have different grid line
         color_minor = (1, 0.93, 0.93)                   # changed
         color_line  = (0,0,0) # black                   # changed
+        face_color = (1, 1, 1)
 
     output_log = {
         "y_min": y_min,
@@ -179,8 +181,11 @@ def plot_v3(
             y_text = vertical_starting_point+2
 
             ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
-            
-            bbox = ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
+            ax.set_facecolor(face_color)
+            if show_lead_name:
+                bbox = ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
+            else:
+                bbox = None
 
             output_log['leads'].append({
                 "min_x_plot": min(x_signal),
@@ -195,9 +200,11 @@ def plot_v3(
                 "ecg": list(ecg[idx]),
             })
 
-            if c:
-                ax.plot([x_signal[0], x_signal[0]], [y_signal[0] - 0.6, y_signal[0] - 0.2], linewidth='0.5', color=color_line)  # changed
-                ax.plot([x_signal[0], x_signal[0]], [y_signal[0] + 0.2, y_signal[0] + 0.6], linewidth='0.5', color=color_line)  # changed
+            # add seperating line between leads
+            if show_separate_line:
+                if c:
+                    ax.plot([x_signal[0], x_signal[0]], [y_signal[0] - 0.6, y_signal[0] - 0.2], linewidth='0.5', color=color_line)  # changed
+                    ax.plot([x_signal[0], x_signal[0]], [y_signal[0] + 0.2, y_signal[0] + 0.6], linewidth='0.5', color=color_line)  # changed
 
     if full_ecg_name:
         sig = full_ecg/vertical_scale
@@ -211,7 +218,10 @@ def plot_v3(
 
         ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
 
-        bbox = ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
+        if show_lead_name:
+            bbox = ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
+        else:
+            bbox = None
 
         output_log['leads'].append({
             "min_x_plot": min(x_signal),
@@ -244,8 +254,9 @@ def plot_v3(
     ax.minorticks_on()  
     ax.xaxis.set_minor_locator(AutoMinorLocator(5))
 
-    ax.grid(which='major', linestyle='-', linewidth=0.5, color=color_major)
-    ax.grid(which='minor', linestyle='-', linewidth=0.5, color=color_minor)
+    if show_grid:
+        ax.grid(which='major', linestyle='-', linewidth=0.5, color=color_major)
+        ax.grid(which='minor', linestyle='-', linewidth=0.5, color=color_minor)
 
     ax.set_aspect('equal')
     # plt.axis('off')
@@ -255,10 +266,12 @@ def plot_v3(
     if isinstance(save_path, str):
         output_log["save_path"] = save_path
     
-    renderer = fig.canvas.get_renderer()
-    for l in output_log['leads']:
-        bbox = l['bbox'].get_window_extent(renderer=renderer)
-        l['bbox'] = (bbox.x0, bbox.y0, bbox.width, bbox.height)
+    if show_lead_name:
+        renderer = fig.canvas.get_renderer()
+        for l in output_log['leads']:
+            bbox = l['bbox'].get_window_extent(renderer=renderer)
+            l['bbox'] = (bbox.x0, bbox.y0, bbox.width, bbox.height)
+    
 
     return output_log   
 
