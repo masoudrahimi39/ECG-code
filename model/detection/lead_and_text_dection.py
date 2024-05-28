@@ -36,7 +36,7 @@ model = YOLO('./model/yolov8n.pt')
 # print(next(os.walk("./")))
 # ultralytics train doc https://docs.ultralytics.com/modes/train/#train-settings
 # exist_ok = False
-results = model.train(data='./model/config.yaml', epochs=1, imgsz=640, save=True, resume=False, batch=16,
+results = model.train(data='./model/config.yaml', epochs=4, imgsz=640, save=True, resume=False, batch=16,
                       project='./model/alaki_1', name='alaki_2', optimizer='auto', pose=0, kobj=0,
                       device='cpu',
                       exist_ok=False,
