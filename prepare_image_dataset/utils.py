@@ -9,7 +9,7 @@ import json
 load_dotenv()
 text_dict = json.loads(os.getenv("labels_dict"))
 
-def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
+def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array, border:int, padding:int):
     """"
     Determine the bounding box; it received logs of a sample, but the imgae was loaded before calling this function.
     Input format: 
@@ -26,13 +26,13 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         file_path = sample['save_path']
         file_name = file_path.split("/")[-1].split(".jpg")[0]
         img_array = plt.imread(file_path)
-    elif mode == 'online':
-        img_array = img_array[:-34, 34:, :]   # we have white border in the left and down of the image, so these borders are removed here
+    # elif mode == 'online':
+    #     img_array = img_array[:-34, 34:, :]   # we have white border in the left and down of the image, so these borders are removed here
     
     
     img_size = img_array.shape
-    img_width = img_size[1]
-    img_height = img_size[0]
+    img_width = img_size[1] - border
+    img_height = img_size[0] - border
 
     x_min = sample['x_min']
     x_max = sample['x_max']
@@ -77,18 +77,18 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
 
         label.append((
             0,
-            (x+w/2)/img_width,
-            (y+h/2)/img_height,
-            w/img_width,
-            h/img_height
+            (x+w/2+border)/(img_width+border),
+            (y+h/2)/(img_height+border),
+            (w+padding)/(img_width+border),
+            (h+padding)/(img_height+border)
         ))
 
         label.append((
             text_dict[lead_text],
-            x_text_ratio+text_width/2/img_width,
-            1-y_text_ratio-0.5*text_height/img_height,
-            text_width/img_width,
-            text_height/img_height
+            (x_text_ratio*img_width+border)/(img_width+border)+text_width/2/(img_width+border),
+            ((1-y_text_ratio)*img_width)/(img_width+border)-0.5*text_height/(img_height+border),
+            (text_width + padding)/img_width,
+            (text_height + padding)/img_height
         ))
 
     if save_bb_path:
@@ -100,7 +100,7 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
 
     return label
 
-def draw_bb(sample: dict, export_path: str):
+def draw_bb(sample: dict, export_path: str, border:int = 34, padding:int = 20):
     """
     Draws a green bounding box around the leads of the image.
     Input format:
@@ -111,13 +111,13 @@ def draw_bb(sample: dict, export_path: str):
     """
     file_path = sample['save_path']
     img = plt.imread(file_path)
-    img = img[:-34, 34:, :]
+    # img = img[:-34, 34:, :]
     img_size = img.shape
     img_width = img_size[1]
     img_height = img_size[0]
 
     plt.imshow(img)
-    for _, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
+    for _, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None, border=border, padding=padding):
         lead_width = w*img_width
         lead_height = h*img_height
         plt.gca().add_patch(plt.Rectangle((x*img_width-lead_width/2, y*img_height-lead_height/2),\
