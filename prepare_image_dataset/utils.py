@@ -9,7 +9,7 @@ import json
 load_dotenv()
 text_dict = json.loads(os.getenv("labels_dict"))
 
-def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array, border:int, padding:int):
+def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
     """"
     Determine the bounding box; it received logs of a sample, but the imgae was loaded before calling this function.
     Input format: 
@@ -29,10 +29,17 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array, border
     # elif mode == 'online':
     #     img_array = img_array[:-34, 34:, :]   # we have white border in the left and down of the image, so these borders are removed here
     
+    padding = sample['padding']
+    border = sample['border']
     
     img_size = img_array.shape
-    img_width = img_size[1] - border
-    img_height = img_size[0] - border
+    # shape of the original image (with white borders)
+    image_with_borders_width = img_size[1]
+    image_with_borders_height = img_size[0]
+
+    # shape of the target image (without additional borders)
+    image_without_borders_width = image_with_borders_width - border
+    image_without_borders_height = image_with_borders_height - border
 
     x_min = sample['x_min']
     x_max = sample['x_max']
@@ -67,28 +74,28 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array, border
         height_lead_ratio = height_lead/height
 
         # Calculate the coordinates of the box (x, y are centers of the bounding boxes)
-        x = int((lead_x_ratio - width_lead_ratio/2) * img_width) 
-        y = int((1-(lead_y_ratio + height_lead_ratio/2)) * img_height)
-        w = int(width_lead_ratio * img_width) 
-        h = int(height_lead_ratio * img_height) 
+        x = int((lead_x_ratio - width_lead_ratio/2) * image_without_borders_width) + border
+        y = int((1-(lead_y_ratio + height_lead_ratio/2)) * image_without_borders_height)
+        w = int(width_lead_ratio * image_without_borders_width) 
+        h = int(height_lead_ratio * image_without_borders_height) 
         
         x_text_ratio = (lead_x_text-x_min)/width
         y_text_ratio = (lead_y_text-y_min)/height
 
         label.append((
             0,
-            (x+w/2+border)/(img_width+border),
-            (y+h/2)/(img_height+border),
-            (w+padding)/(img_width+border),
-            (h+padding)/(img_height+border)
+            (x + w/2) / image_with_borders_width,
+            (y + h/2) / image_with_borders_height,
+            (w + padding) / image_with_borders_width,
+            (h + padding) / image_with_borders_height
         ))
 
         label.append((
             text_dict[lead_text],
-            (x_text_ratio*img_width+border)/(img_width+border)+text_width/2/(img_width+border),
-            ((1-y_text_ratio)*img_width)/(img_width+border)-0.5*text_height/(img_height+border),
-            (text_width + padding)/img_width,
-            (text_height + padding)/img_height
+            (x_text_ratio * image_without_borders_width + border + text_width/2) / image_with_borders_width,
+            ((1-y_text_ratio) * image_without_borders_height - text_height/2) / image_with_borders_height,
+            (text_width + padding) / image_with_borders_width,
+            (text_height + padding) / image_with_borders_height
         ))
 
     if save_bb_path:
@@ -100,7 +107,7 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array, border
 
     return label
 
-def draw_bb(sample: dict, export_path: str, border:int = 34, padding:int = 20):
+def draw_bb(sample: dict, export_path: str):
     """
     Draws a green bounding box around the leads of the image.
     Input format:
@@ -117,7 +124,7 @@ def draw_bb(sample: dict, export_path: str, border:int = 34, padding:int = 20):
     img_height = img_size[0]
 
     plt.imshow(img)
-    for _, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None, border=border, padding=padding):
+    for _, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
         lead_width = w*img_width
         lead_height = h*img_height
         plt.gca().add_patch(plt.Rectangle((x*img_width-lead_width/2, y*img_height-lead_height/2),\
@@ -129,7 +136,7 @@ def draw_bb(sample: dict, export_path: str, border:int = 34, padding:int = 20):
 
 
 if __name__ == "__main__":
-    log_path = "datasets/image_dataset_v5.0/train/"
+    log_path = "datasets/image_dataset_v4.0/train/"
     with open(f"{log_path}logs.json", 'r') as f:
         logs = json.load(f)
     # determine_bb(sample=logs['samples'][1], mode='load_image', save_bb_path=None, img_array=None)

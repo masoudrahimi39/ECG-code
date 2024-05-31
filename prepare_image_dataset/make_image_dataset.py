@@ -65,6 +65,9 @@ train_prcnt = 0.6
 val_prcnt = 0.2
 test_prcnt = 0.2
 
+padding:int = 30        # it's the padding around the bounding boxes
+border:int = 34         # it's the white border in down left of the image that should be considered in determining the bounding box
+
 path_to_save_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/'
 if os.path.exists(path_to_save_dataset):
     shutil.rmtree(path_to_save_dataset)   # remove the directory
@@ -105,8 +108,7 @@ for lead_format, each_lead_config in lead_config.items():
         file_path = path_to_save_dataset + dtset_type + '/' + file_name
         labe_path = path_to_save_dataset + dtset_type + '/' + label_name
 
-        logs[dtset_type].append(
-            ecg_plot_v2.plot_v3(
+        log = ecg_plot_v2.plot_v3(
                 ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
                 full_ecg=X[i, :, 1].T, 
                 full_ecg_name=each_lead_config['full_ecg_name'],
@@ -121,15 +123,18 @@ for lead_format, each_lead_config in lead_config.items():
                 row_height=row_height,
                 style=None,
                 save_path=file_path)
-        )
+        
+        log['padding'] = padding
+        log['border'] = border
 
         # convert the ploted image to an np.array in order to have the image array
         fig = plt.gcf()
         fig.canvas.draw()
         image_array = np.array(fig.canvas.renderer._renderer)
-        determine_bb(sample=logs[dtset_type][-1], mode='online', save_bb_path=labe_path, img_array=image_array)
+        determine_bb(sample=log, mode='online', save_bb_path=labe_path, img_array=image_array)
 
         ecg_plot_v2.save_as_jpg(file_path)
+        logs[dtset_type].append(log)
 
         cnt2 +=1
 
