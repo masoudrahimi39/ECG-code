@@ -104,26 +104,49 @@ for lead_format, each_lead_config in lead_config.items():
             dtset_type = 'test'
         
         file_name = str(i)+'_'+lead_format+'.jpg'
+        file_bw_name = str(i)+'_'+lead_format+'-bw.jpg'
         label_name = str(i)+'_'+lead_format+'.txt'
         file_path = path_to_save_dataset + dtset_type + '/' + file_name
+        file_bw_path = path_to_save_dataset + dtset_type + '/' + file_bw_name
         labe_path = path_to_save_dataset + dtset_type + '/' + label_name
 
-        log = ecg_plot_v2.plot_v3(
-                ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
-                full_ecg=X[i, :, 1].T, 
-                full_ecg_name=each_lead_config['full_ecg_name'],
-                sample_rate=sampling_rate, 
-                columns=each_lead_config['n_column'],
-                lead_index=lead_index,
-                title='', 
-                lead_order=each_lead_config['lead_order'],
-                show_lead_name=True,
-                show_grid=True, 
-                show_separate_line=True,
-                row_height=row_height,
-                style=None,
-                save_path=file_path)
+        plt.close("all")
         
+        ecg_plot_v2.plot_v3(
+            ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+            full_ecg=X[i, :, 1].T, 
+            full_ecg_name=each_lead_config['full_ecg_name'],
+            sample_rate=sampling_rate, 
+            columns=each_lead_config['n_column'],
+            lead_index=lead_index,
+            title='', 
+            lead_order=each_lead_config['lead_order'],
+            show_lead_name=False,
+            show_grid=False, 
+            show_separate_line=False,
+            row_height=row_height,
+            style='bw',
+            save_path=file_bw_path)
+
+        ecg_plot_v2.save_as_jpg(file_bw_path)
+        plt.close("all")
+
+        log = ecg_plot_v2.plot_v3(
+            ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+            full_ecg=X[i, :, 1].T, 
+            full_ecg_name=each_lead_config['full_ecg_name'],
+            sample_rate=sampling_rate, 
+            columns=each_lead_config['n_column'],
+            lead_index=lead_index,
+            title='', 
+            lead_order=each_lead_config['lead_order'],
+            show_lead_name=True,
+            show_grid=True, 
+            show_separate_line=True,
+            row_height=row_height,
+            style=None,
+            save_path=file_path)
+
         log['padding'] = padding
         log['border'] = border
 
