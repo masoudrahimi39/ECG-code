@@ -10,7 +10,7 @@ from math import ceil
 import shutil
 sys.path.append("./prepare_image_dataset/adjusted_library")  # in order to import the adjusted "ecg_plot" library
 import ecg_plot_v2
-from utils import determine_bb
+from utils import determine_bb, crop_bb
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -103,12 +103,17 @@ for lead_format, each_lead_config in lead_config.items():
         elif ceil((val_prcnt+train_prcnt)*n_sample_each_lead) <= cnt2 :
             dtset_type = 'test'
         
-        file_name = str(i)+'_'+lead_format+'.jpg'
-        file_bw_name = str(i)+'_'+lead_format+'-bw.jpg'
-        label_name = str(i)+'_'+lead_format+'.txt'
-        file_path = path_to_save_dataset + dtset_type + '/' + file_name
-        file_bw_path = path_to_save_dataset + dtset_type + '/' + file_bw_name
-        labe_path = path_to_save_dataset + dtset_type + '/' + label_name
+        export_path = path_to_save_dataset + dtset_type + '/' + str(i)+'_'+lead_format + '/'
+        unet_input_path = export_path + "/unet_inputs"
+        unet_label_path = export_path + "/unet_labels"
+
+        os.mkdir(export_path)
+        os.mkdir(unet_input_path)
+        os.mkdir(unet_label_path)
+
+        file_path = export_path + "image.jpg"
+        file_bw_path = export_path + "bw.jpg"
+        labe_path = export_path + "label.txt"
 
         plt.close("all")
         
@@ -127,6 +132,10 @@ for lead_format, each_lead_config in lead_config.items():
             row_height=row_height,
             style='bw',
             save_path=file_bw_path)
+
+        fig = plt.gcf()
+        fig.canvas.draw()
+        bw_array = np.array(fig.canvas.renderer._renderer)
 
         ecg_plot_v2.save_as_jpg(file_bw_path)
         plt.close("all")
@@ -154,10 +163,14 @@ for lead_format, each_lead_config in lead_config.items():
         fig = plt.gcf()
         fig.canvas.draw()
         image_array = np.array(fig.canvas.renderer._renderer)
-        determine_bb(sample=log, mode='online', save_bb_path=labe_path, img_array=image_array)
 
+        determine_bb(sample=log, mode='online', save_bb_path=labe_path, img_array=image_array)
+        
         ecg_plot_v2.save_as_jpg(file_path)
         logs[dtset_type].append(log)
+
+        crop_bb(sample=log, export_path=unet_label_path, img_path=file_bw_path)
+        crop_bb(sample=log, export_path=unet_input_path, img_path=file_path)
 
         cnt2 +=1
 
