@@ -8,6 +8,7 @@ prepare_image_dataset/adjusted_library/ecg_plot/__pycache__/*
 prepare_image_dataset/adjusted_library/ecg_plot_v2/__pycache__/*
 prepare_image_dataset/make_image_dataset.ipynb
 local_notebook.ipynb
-model/config.yaml
+model/detection/config.yaml
+model/detection/*.pt
 runs/
 *.pt
