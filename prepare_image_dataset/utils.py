@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import cv2
 from dotenv import load_dotenv
 import json
+from PIL import Image
 
 load_dotenv()
 text_dict = json.loads(os.getenv("labels_dict"))
@@ -133,7 +134,34 @@ def draw_bb(sample: dict, export_path: str):
     plt.savefig(export_path, dpi=300)
     plt.close()
 
-
+def crop_bb(sample:dict, export_path:str, img_path:str):
+    """
+    Loads an image using img_path. Then, finds the leads using sample, crops them and saves it to the export path
+    Input format:
+        sample: the dictionary which includes the information of the specified sample
+        export_path: the path to export the output image
+        img_path: path to the image that should be cropped
+    output:
+        cropped images saved in the export path
+    """
+    file_path = sample['save_path']
+    img = plt.imread(file_path)
+    # img = img[:-34, 34:, :]
+    img_size = img.shape
+    img_width = img_size[1]
+    img_height = img_size[0]
+    
+    img = Image.open(img_path)
+    lead_number = 0
+    for c, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
+        if c != 0:
+            continue
+        lead_width = w*img_width
+        lead_height = h*img_height
+        start_x, start_y = x*img_width-lead_width/2, y*img_height-lead_height/2
+        end_x, end_y = x*img_width+lead_width/2, y*img_height+lead_height/2
+        img.crop((start_x, start_y, end_x, end_y)).save(os.path.join(export_path, f"lead-{lead_number}.jpg"))
+        lead_number += 1
 
 if __name__ == "__main__":
     log_path = "datasets/image_dataset_v4.0/train/"

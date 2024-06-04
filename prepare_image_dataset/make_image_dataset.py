@@ -10,7 +10,7 @@ from math import ceil
 import shutil
 sys.path.append("./prepare_image_dataset/adjusted_library")  # in order to import the adjusted "ecg_plot" library
 import ecg_plot_v2
-from utils import determine_bb
+from utils import determine_bb, crop_bb
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -56,6 +56,12 @@ else:
     X = np.load(f'{os.getenv("signal_dataset_path")}all_signals_{sampling_rate}Hz.npy')
     print(f'all_signals_{sampling_rate}Hz.npy file loaded')
 
+# set the dataset type, this code can make whether 'detection' dataset or 'refinement'
+# Note: detection is about spliting the picture to different leads and refinement is about converting the image to a binary image to digitize the signal afterwards
+dataset_type = "refinement"
+
+is_detection_dataset = dataset_type=="detection"
+is_refinement_dataset = dataset_type=="refinement"
 
 ### convert the signal to ecg image
 dataset_version = 4 
@@ -68,14 +74,17 @@ test_prcnt = 0.2
 padding:int = 30        # it's the padding around the bounding boxes
 border:int = 34         # it's the white border in down left of the image that should be considered in determining the bounding box
 
-path_to_save_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/'
+path_to_save_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/{dataset_type}/'
 if os.path.exists(path_to_save_dataset):
     shutil.rmtree(path_to_save_dataset)   # remove the directory
 os.makedirs(path_to_save_dataset)
 # Create child directories: test, train, val
-os.makedirs(os.path.join(path_to_save_dataset, "test"))
-os.makedirs(os.path.join(path_to_save_dataset, "train"))
-os.makedirs(os.path.join(path_to_save_dataset, "val"))
+for folder in ["train", "test", "val"]:
+    os.makedirs(os.path.join(path_to_save_dataset, folder))
+    if is_refinement_dataset:
+        os.makedirs(os.path.join(path_to_save_dataset, folder, "original"))
+        os.makedirs(os.path.join(path_to_save_dataset, folder, "input"))
+        os.makedirs(os.path.join(path_to_save_dataset, folder, "label"))
 print(f'directory {path_to_save_dataset} created.')
 
 
@@ -103,61 +112,106 @@ for lead_format, each_lead_config in lead_config.items():
         elif ceil((val_prcnt+train_prcnt)*n_sample_each_lead) <= cnt2 :
             dtset_type = 'test'
         
-        file_name = str(i)+'_'+lead_format+'.jpg'
-        file_bw_name = str(i)+'_'+lead_format+'-bw.jpg'
-        label_name = str(i)+'_'+lead_format+'.txt'
-        file_path = path_to_save_dataset + dtset_type + '/' + file_name
-        file_bw_path = path_to_save_dataset + dtset_type + '/' + file_bw_name
-        labe_path = path_to_save_dataset + dtset_type + '/' + label_name
+        sample_name = str(i)+'_'+lead_format
+        export_path = path_to_save_dataset + dtset_type
 
         plt.close("all")
+        if is_detection_dataset:
+            file_path = os.path.join(export_path, sample_name+".jpg")
+            label_path = os.path.join(export_path, sample_name+".txt")
+            log = ecg_plot_v2.plot_v3(
+                ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+                full_ecg=X[i, :, 1].T, 
+                full_ecg_name=each_lead_config['full_ecg_name'],
+                sample_rate=sampling_rate, 
+                columns=each_lead_config['n_column'],
+                lead_index=lead_index,
+                title='', 
+                lead_order=each_lead_config['lead_order'],
+                show_lead_name=True,
+                show_grid=True, 
+                show_separate_line=True,
+                row_height=row_height,
+                style=None,
+                save_path=file_path)
+
+            log['padding'] = padding
+            log['border'] = border
+
+            # convert the ploted image to an np.array in order to have the image array
+            fig = plt.gcf()
+            fig.canvas.draw()
+            image_array = np.array(fig.canvas.renderer._renderer)
+
+            determine_bb(sample=log, mode='online', save_bb_path=label_path, img_array=image_array)
+            
+            ecg_plot_v2.save_as_jpg(file_path)
+            logs[dtset_type].append(log)
         
-        ecg_plot_v2.plot_v3(
-            ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
-            full_ecg=X[i, :, 1].T, 
-            full_ecg_name=each_lead_config['full_ecg_name'],
-            sample_rate=sampling_rate, 
-            columns=each_lead_config['n_column'],
-            lead_index=lead_index,
-            title='', 
-            lead_order=each_lead_config['lead_order'],
-            show_lead_name=False,
-            show_grid=False, 
-            show_separate_line=False,
-            row_height=row_height,
-            style='bw',
-            save_path=file_bw_path)
+        elif is_refinement_dataset:
+            original_path = os.path.join(export_path, "original")
+            file_path = os.path.join(original_path, sample_name+".jpg")
+            file_bw_path = os.path.join(original_path, sample_name+"-bw.jpg")
 
-        ecg_plot_v2.save_as_jpg(file_bw_path)
-        plt.close("all")
+            unet_input_path = os.path.join(export_path, "input")
+            unet_label_path = os.path.join(export_path, "label")
 
-        log = ecg_plot_v2.plot_v3(
-            ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
-            full_ecg=X[i, :, 1].T, 
-            full_ecg_name=each_lead_config['full_ecg_name'],
-            sample_rate=sampling_rate, 
-            columns=each_lead_config['n_column'],
-            lead_index=lead_index,
-            title='', 
-            lead_order=each_lead_config['lead_order'],
-            show_lead_name=True,
-            show_grid=True, 
-            show_separate_line=True,
-            row_height=row_height,
-            style=None,
-            save_path=file_path)
+            ecg_plot_v2.plot_v3(
+                ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+                full_ecg=X[i, :, 1].T, 
+                full_ecg_name=each_lead_config['full_ecg_name'],
+                sample_rate=sampling_rate, 
+                columns=each_lead_config['n_column'],
+                lead_index=lead_index,
+                title='', 
+                lead_order=each_lead_config['lead_order'],
+                show_lead_name=False,
+                show_grid=False, 
+                show_separate_line=False,
+                row_height=row_height,
+                style='bw',
+                save_path=file_bw_path)
 
-        log['padding'] = padding
-        log['border'] = border
+            fig = plt.gcf()
+            fig.canvas.draw()
+            bw_array = np.array(fig.canvas.renderer._renderer)
 
-        # convert the ploted image to an np.array in order to have the image array
-        fig = plt.gcf()
-        fig.canvas.draw()
-        image_array = np.array(fig.canvas.renderer._renderer)
-        determine_bb(sample=log, mode='online', save_bb_path=labe_path, img_array=image_array)
+            ecg_plot_v2.save_as_jpg(file_bw_path)
 
-        ecg_plot_v2.save_as_jpg(file_path)
-        logs[dtset_type].append(log)
+            log = ecg_plot_v2.plot_v3(
+                ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+                full_ecg=X[i, :, 1].T, 
+                full_ecg_name=each_lead_config['full_ecg_name'],
+                sample_rate=sampling_rate, 
+                columns=each_lead_config['n_column'],
+                lead_index=lead_index,
+                title='', 
+                lead_order=each_lead_config['lead_order'],
+                show_lead_name=True,
+                show_grid=True, 
+                show_separate_line=True,
+                row_height=row_height,
+                style=None,
+                save_path=file_path)
+
+            log['padding'] = padding
+            log['border'] = border
+
+            # convert the ploted image to an np.array in order to have the image array
+            fig = plt.gcf()
+            fig.canvas.draw()
+            image_array = np.array(fig.canvas.renderer._renderer)
+            ecg_plot_v2.save_as_jpg(file_path)
+
+            determine_bb(sample=log, mode='online', save_bb_path=None, img_array=image_array)
+            
+            crop_bb(sample=log, export_path=unet_label_path, img_path=file_bw_path)
+            crop_bb(sample=log, export_path=unet_input_path, img_path=file_path)
+
+            logs[dtset_type].append(log)
+
+        else:
+            raise ValueError(f"dataset type not in range, dataset type is set to {dataset_type}")
 
         cnt2 +=1
 
