@@ -1,3 +1,4 @@
+#%%
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
@@ -21,20 +22,25 @@ helper.plot_side_by_side([input_images_rgb, target_masks_rgb])
 plt.savefig("tmp.png")
 plt.close("all")
 
+#%%
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, datasets, models
+import os
 
 class SimDataset(Dataset):
-  def __init__(self, count, transform=None):
-    self.input_images, self.target_masks = simulation.generate_random_data(192, 192, count=count)
+  def __init__(self, path, transform=None):
+    self.path = path
+    self.input_path = os.path.join(path, "input")
+    self.label_path = os.path.join(path, "label")
+    _, _, self.image_files = next(os.walk(self.input_path))
     self.transform = transform
 
   def __len__(self):
-    return len(self.input_images)
+    return len(self.image_files)
 
   def __getitem__(self, idx):
-    image = self.input_images[idx]
-    mask = self.target_masks[idx]
+    image = plt.imread(os.path.join(self.input_path, self.image_files[idx]))
+    mask = plt.imread(os.path.join(self.label_path, self.image_files[idx]))
     if self.transform:
       image = self.transform(image)
 
@@ -46,8 +52,8 @@ trans = transforms.Compose([
   transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet
 ])
 
-train_set = SimDataset(2000, transform = trans)
-val_set = SimDataset(200, transform = trans)
+train_set = SimDataset("datasets/image_dataset_v4.0/refinement/train", transform = trans)
+val_set = SimDataset("datasets/image_dataset_v4.0/refinement/val", transform = trans)
 
 image_datasets = {
   'train': train_set, 'val': val_set
@@ -60,6 +66,8 @@ dataloaders = {
   'val': DataLoader(val_set, batch_size=batch_size, shuffle=True, num_workers=0)
 }
 
+
+#%%
 import torchvision.utils
 
 def reverse_transform(inp):
@@ -81,6 +89,9 @@ plt.close("all")
 plt.imshow(reverse_transform(inputs[3]))
 plt.savefig("tt.png")
 
+
+
+#%%
 import torch.nn as nn
 import torchvision.models
 
@@ -163,6 +174,8 @@ class ResNetUNet(nn.Module):
     return out
 
 
+
+#%%
 import torch
 import torch.nn as nn
 import model.digitization.library.pytorch_unet
@@ -177,6 +190,9 @@ model = model.to(device)
 # summary(model, input_size=(3, 224, 224))
 
 
+
+
+#%%
 from collections import defaultdict
 import torch.nn.functional as F
 from model.digitization.library.loss import dice_loss
@@ -268,6 +284,8 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
     return model
 
 
+
+#%%
 import torch
 import torch.optim as optim
 from torch.optim import lr_scheduler
