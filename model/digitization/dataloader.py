@@ -6,6 +6,11 @@ from torchvision import transforms
 import os
 import matplotlib.pyplot as plt
 
+# there was an error in concatenation of unet with the upsampled vector (https://stackoverflow.com/questions/66573636/keras-unet-a-concatenate-layer-requires-inputs-with-matching-shapes-except-fo)
+# to handle this error, we added factor of 2 for 5 times to the input and mask image since after 5 layers of down sampling we stll gonna have
+# two images with identical shape for concatenation 
+dividable = 32 
+
 class SimDataset(Dataset):
     def __init__(self, path, input_transform=None, label_transform=None):
         self.path = path
@@ -35,6 +40,9 @@ def pad_collate(batch):
     max_height = max([img.size(1) for img in input_batch])
     max_width = max([img.size(2) for img in input_batch])
 
+    max_height = (max_height//dividable+1)*dividable
+    max_width = (max_width//dividable+1)*dividable
+
     padded_input = []
     padded_label = []
 
@@ -51,7 +59,7 @@ def pad_collate(batch):
 # Transformation for train/val
 input_transform = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # imagenet normalization
+    transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]), # imagenet normalization
 ])
 
 # Define the transformation
@@ -66,6 +74,6 @@ val_set = SimDataset("datasets/image_dataset_v4.0/refinement/val", input_transfo
 
 # Dataloaders
 dataloaders = {
-    'train': DataLoader(train_set, batch_size=25, shuffle=True, num_workers=0, collate_fn=pad_collate),
-    'val': DataLoader(val_set, batch_size=25, shuffle=True, num_workers=0, collate_fn=pad_collate)
+    'train': DataLoader(train_set, batch_size=2, shuffle=True, num_workers=0, collate_fn=pad_collate),
+    'val': DataLoader(val_set, batch_size=2, shuffle=True, num_workers=0, collate_fn=pad_collate)
 }
