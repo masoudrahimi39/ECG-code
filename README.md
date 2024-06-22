@@ -7,3 +7,5 @@
 - Configure the .env variables
 - Stand in the root of the repo and then :
 - `python3 -m dataloader.preprocessing`
+
+We used a Unet pytorch template form [this](https://github.com/milesial/Pytorch-UNet) repo.
