@@ -32,7 +32,8 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
             else:
                 model.eval()   # Set model to evaluate mode
 
-            metrics = defaultdict(float)
+            # metrics = defaultdict(float)
+            metrics = 1.0
             epoch_samples = 0
 
             for inputs, labels in dataloaders[phase]:
@@ -57,7 +58,8 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
                 epoch_samples += inputs.size(0)
 
             # print_metrics(metrics, epoch_samples, phase)
-            epoch_loss = metrics['loss'] / epoch_samples
+            # epoch_loss = metrics['loss'] / epoch_samples
+            epoch_loss = loss / epoch_samples
 
             if phase == 'train':
                 scheduler.step()
@@ -80,7 +82,7 @@ def train_model(model, optimizer, scheduler, num_epochs=25):
     return model
 
 # Training setup
-num_class = 6
+num_class = 1
 model = ResNetUNet(num_class).to(device)
 
 # freeze backbone layers
