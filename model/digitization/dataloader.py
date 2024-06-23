@@ -40,8 +40,8 @@ def pad_collate(batch):
     max_height = max([img.size(1) for img in input_batch])
     max_width = max([img.size(2) for img in input_batch])
 
-    max_height = (max_height//dividable+1)*dividable
-    max_width = (max_width//dividable+1)*dividable
+    max_height = ((max_height-1)//dividable+1)*dividable
+    max_width = ((max_width-1)//dividable+1)*dividable
 
     padded_input = []
     padded_label = []
