@@ -12,3 +12,4 @@ model/detection/config.yaml
 model/detection/*.pt
 runs/
 *.pt
+*.pth

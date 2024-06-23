@@ -134,7 +134,7 @@ def draw_bb(sample: dict, export_path: str):
     plt.savefig(export_path, dpi=300)
     plt.close()
 
-def crop_bb(sample:dict, export_path:str, img_path:str):
+def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str=""):
     """
     Loads an image using img_path. Then, finds the leads using sample, crops them and saves it to the export path
     Input format:
@@ -150,7 +150,7 @@ def crop_bb(sample:dict, export_path:str, img_path:str):
     img_size = img.shape
     img_width = img_size[1]
     img_height = img_size[0]
-    
+
     img = Image.open(img_path)
     lead_number = 0
     for c, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
@@ -160,11 +160,11 @@ def crop_bb(sample:dict, export_path:str, img_path:str):
         lead_height = h*img_height
         start_x, start_y = x*img_width-lead_width/2, y*img_height-lead_height/2
         end_x, end_y = x*img_width+lead_width/2, y*img_height+lead_height/2
-        img.crop((start_x, start_y, end_x, end_y)).save(os.path.join(export_path, f"lead-{lead_number}.jpg"))
+        img.crop((start_x, start_y, end_x, end_y)).save(os.path.join(export_path, f"{prefix}lead_{lead_number}.png"))
         lead_number += 1
 
 if __name__ == "__main__":
-    log_path = "datasets/image_dataset_v4.0/train/"
+    log_path = "datasets/image_dataset_v4.0/detection/train/"
     with open(f"{log_path}logs.json", 'r') as f:
         logs = json.load(f)
     # determine_bb(sample=logs['samples'][1], mode='load_image', save_bb_path=None, img_array=None)

@@ -205,8 +205,8 @@ for lead_format, each_lead_config in lead_config.items():
 
             determine_bb(sample=log, mode='online', save_bb_path=None, img_array=image_array)
             
-            crop_bb(sample=log, export_path=unet_label_path, img_path=file_bw_path)
-            crop_bb(sample=log, export_path=unet_input_path, img_path=file_path)
+            crop_bb(sample=log, export_path=unet_label_path, img_path=file_bw_path, prefix=sample_name+"_")
+            crop_bb(sample=log, export_path=unet_input_path, img_path=file_path, prefix=sample_name+"_")
 
             logs[dtset_type].append(log)
 
