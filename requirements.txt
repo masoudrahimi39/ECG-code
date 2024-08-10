@@ -1,7 +1,8 @@
-pandas
-numpy
-wfdb
-ast
-random
-matplotlib
+ultralytics
 python-dotenv
+torch
+torchvision
+matplotlib
+numpy
+pandas
+wfdb
