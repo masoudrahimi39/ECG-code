@@ -1,3 +1,0 @@
-[submodule "model/digitization/library"]
-	path = model/digitization/library
-	url = https://github.com/usuyama/pytorch-unet.git

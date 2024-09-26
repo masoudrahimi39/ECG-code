@@ -153,6 +153,7 @@ def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str=""):
 
     img = Image.open(img_path)
     lead_number = 0
+    out = []
     for c, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
         if c != 0:
             continue
@@ -160,8 +161,12 @@ def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str=""):
         lead_height = h*img_height
         start_x, start_y = x*img_width-lead_width/2, y*img_height-lead_height/2
         end_x, end_y = x*img_width+lead_width/2, y*img_height+lead_height/2
-        img.crop((start_x, start_y, end_x, end_y)).save(os.path.join(export_path, f"{prefix}lead_{lead_number}.png"))
+        cropped = img.crop((start_x, start_y, end_x, end_y))
+        out.append(cropped)
+        if export_path:
+            cropped.save(os.path.join(export_path, f"{prefix}lead_{lead_number}.png"))
         lead_number += 1
+    return out
 
 if __name__ == "__main__":
     log_path = "datasets/image_dataset_v4.0/detection/train/"
