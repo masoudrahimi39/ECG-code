@@ -14,3 +14,5 @@ runs/
 *.pt
 *.pth
 model/detection/result/
+model/detection/config_test.yaml
+model/detection/config.yaml
