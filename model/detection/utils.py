@@ -15,7 +15,7 @@ def find_files_with_patterns(directory, patterns, n_files=2):
             
             # Check if the file matches the current pattern
             if fnmatch.fnmatch(file, f"*{pattern}"):
-                matched_files[pattern].append(test_dataset_path+'/'+file)
+                matched_files[pattern].append(directory+'/'+file)
     
     image_paths_for_inference = []
     for pattern, files in matched_files.items():
