@@ -14,5 +14,5 @@ runs/
 *.pt
 *.pth
 wandb/
-model/detection/inf_img/
+model/detection/inf_img
 model/detection/result*
