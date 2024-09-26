@@ -1,50 +1,60 @@
 from ultralytics import YOLO
 import os
 from dotenv import load_dotenv
-import fnmatch
+from model.utils.utils import find_files_with_patterns
+from PIL import Image
+import matplotlib.pyplot as plt
 
 
-def find_files_with_patterns(directory, patterns, n_files=2):
-    ''' return a list containg directories of `n_files` images from each lead format from the test dataset.'''
 
-    matched_files = {pattern: [] for pattern in patterns}
+def inference(model, image=None, image_path=None, crop=False, plot=False, scale_text_boxes=False):
+    if type(model) == str:
+        model = YOLO(model)
+    if image_path:
+        image = Image.open(image_path)
 
-    for file in os.listdir(directory):
-        # Check if we've already found two files for this pattern
-        for pattern in patterns:
-            if len(matched_files[pattern]) >= n_files:
-                continue  # Move to the next pattern if already found 2 files
-            
-            # Check if the file matches the current pattern
-            if fnmatch.fnmatch(file, f"*{pattern}"):
-                matched_files[pattern].append(test_dataset_path+'/'+file)
-    
-    image_paths_for_inference = []
-    for pattern, files in matched_files.items():
-        image_paths_for_inference.extend(files)
+    res = model(image)
+    out = []
+    # Extract each bounding box and plot it
+    for i, (x, y, w, h) in enumerate(res[0].boxes.xywh.cpu().numpy()):
+        class_id = res[0].boxes[i].cls.cpu().numpy()[0]
+        class_name = classes[class_id]
 
-    return image_paths_for_inference
-
-
-### load 2 image from each lead format for testing
-load_dotenv()
-test_dataset_path = os.getenv("image_dataset_path") +  '/test'
-patterns = ['_3by1.jpg', '_3by4.jpg', '_6by2.jpg', '_12by1.jpg']
-image_paths_for_inference = find_files_with_patterns(test_dataset_path, patterns, n_files=2)
+        
+        if class_name != "lead" and scale_up_text_boxes:
+            cropped_img = img.crop((x-w/2, y-h/2, x + w * 1.3, y + h/2))
+        else:
+            cropped_img = img.crop((x-w/2, y-h/2, x + w/2, y + h/2))
 
 
-### load model and make inference
-model = YOLO('./model/alaki_1/alaki_22/weights/best.pt')
-# results = model(source=image_paths_for_inference, show=False, show_labels=True, show_boxes=True, imgsz=320, conf=0.5, device='cpu')  # list of Results objects
-results = model(image_paths_for_inference)  # list of Results objects
+        out.append({
+            "class_name": class_name,
+            "bbox_xywh": (x, y, w, h),
+            "img": cropped_img
+        })
 
-cnt = 0
-for result in results:
-    boxes = result.boxes                # Boxes object for bounding box outputs
-    # masks = result.masks              # Masks object for segmentation masks outputs
-    # keypoints = result.keypoints      # Keypoints object for pose outputs
-    probs = result.probs                # Probs object for classification outputs
-    obb = result.obb                    # Oriented boxes object for OBB outputs
-    # result.show()                     # display to screen
-    result.save(filename=f'result_{cnt}.jpg')  # save to disk
-    cnt += 1
+        if plot:
+          title = f"predicted: {class_name}"
+
+          plt.title(title)
+          plt.imshow(cropped_img)
+          plt.show()
+          plt.close("all")
+
+    return out
+
+
+
+
+if __name__ == "__name__":
+    load_dotenv()
+    test_dataset_path = os.getenv("image_dataset_path") +  '/test'
+    best_model_path = os.getenv("best_model_detection")
+
+    # get 2 files with the below pattern from the test dataset directoy
+    patterns = ['_3by1.jpg', '_3by4.jpg', '_6by2.jpg', '_12by1.jpg']
+    image_paths_for_inference = find_files_with_patterns(test_dataset_path, patterns, n_files=1)
+
+    for img_path in image_paths_for_inference:
+        out = inference(model=best_model_path, image_path=img_path, crop=True, plot=True, scale_text_boxes=True)
+        break

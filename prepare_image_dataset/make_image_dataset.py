@@ -58,7 +58,8 @@ else:
 
 # set the dataset type, this code can make whether 'detection' dataset or 'refinement'
 # Note: detection is about spliting the picture to different leads and refinement is about converting the image to a binary image to digitize the signal afterwards
-dataset_type = "refinement"
+# dataset_type = "refinement"
+dataset_type = "detection"
 
 is_detection_dataset = dataset_type=="detection"
 is_refinement_dataset = dataset_type=="refinement"
