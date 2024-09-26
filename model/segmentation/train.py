@@ -58,8 +58,7 @@ def train_segmentation_model(dataset_path, config_path):
 
 if __name__ == "__main__":
     load_dotenv()
-    base_path = os.getenv("image_dataset_path")
-    dataset_path = os.path.join(base_path, "refinement")
+    dataset_path = os.getenv("refinement_dataset_path")
 
     config_path = os.path.join(os.getenv("config_path"), "segmentation_config.yaml")
 
