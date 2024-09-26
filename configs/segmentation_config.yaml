@@ -1,0 +1,6 @@
+names:
+  0: signal
+path: /Users/rezakarbasi/PersonalFiles/Projects/4_OtherProj/ECG-proj/code/ECG/datasets/image_dataset_v4.0/refinement
+test: /Users/rezakarbasi/PersonalFiles/Projects/4_OtherProj/ECG-proj/code/ECG/datasets/image_dataset_v4.0/refinement/test
+train: /Users/rezakarbasi/PersonalFiles/Projects/4_OtherProj/ECG-proj/code/ECG/datasets/image_dataset_v4.0/refinement/train
+val: /Users/rezakarbasi/PersonalFiles/Projects/4_OtherProj/ECG-proj/code/ECG/datasets/image_dataset_v4.0/refinement/val

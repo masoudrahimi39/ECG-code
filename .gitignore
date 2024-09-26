@@ -13,3 +13,4 @@ model/detection/*.pt
 runs/
 *.pt
 *.pth
+wandb/
