@@ -4,7 +4,7 @@ import os
 import json
 import yaml
 
-def make_config(dir_to_save_config, classes):
+def make_config(dataset_path, dir_to_save_config, classes):
     configuration={
         "path": os.path.abspath(dataset_path),
         "train": os.path.abspath(dataset_path + "/train"),
@@ -23,7 +23,7 @@ def train():
     classes = json.loads(detection_classes)
     classes = {v:k for k, v in classes.items()}
 
-    make_config(config_train_dir, classes)
+    make_config(dataset_path, config_train_dir, classes)
 
     settings.update({'mlflow': True})
     # os.environ["MLFLOW_TRACKING_URI"] = "sqlite:////Users/rezakarbasi/mlflow/mlflow.db"

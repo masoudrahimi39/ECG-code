@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 import yaml
 
 
-def make_config(dataset_path, classes):
+def make_config(dataset_path, classes, config_path):
 
     configuration={
         "path": os.path.abspath(dataset_path),
@@ -23,7 +23,7 @@ def train_segmentation_model(dataset_path, config_path):
     classes = {"signal":0}
     classes = {v:k for k, v in classes.items()}
 
-    make_config(dataset_path, classes)
+    make_config(dataset_path, classes, config_path)
 
     model = YOLO("yolov8n-seg.pt")
     results = model.train(data=config_path,
@@ -46,8 +46,8 @@ def train_segmentation_model(dataset_path, config_path):
                         copy_paste=0,
                         erasing=0,
                         crop_fraction=0,
-                        # project='/content/drive/MyDrive/slight-version-ECG/model/digitization/',
-                        name='segmentation',
+                        project='./model/segmentation/',
+                        name='result',
                         # optimizer='auto', pose=0, kobj=0,
                         device='cuda',
                         # resume=False,
@@ -59,7 +59,6 @@ def train_segmentation_model(dataset_path, config_path):
 if __name__ == "__main__":
     load_dotenv()
     dataset_path = os.getenv("refinement_dataset_path")
-
     config_path = os.getenv("segmentation_train_config")
 
     # Update a setting; enable MLFlow
