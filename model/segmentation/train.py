@@ -60,7 +60,7 @@ if __name__ == "__main__":
     load_dotenv()
     dataset_path = os.getenv("refinement_dataset_path")
 
-    config_path = os.path.join(os.getenv("config_path"), "segmentation_config.yaml")
+    config_path = os.getenv("segmentation_train_config")
 
     # Update a setting; enable MLFlow
     settings.update({'mlflow': True})
