@@ -68,19 +68,31 @@ test_prcnt = 0.2
 padding:int = 30        # it's the padding around the bounding boxes
 border:int = 34         # it's the white border in down left of the image that should be considered in determining the bounding box
 
-path_to_save_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/segmentation/'
-if os.path.exists(path_to_save_dataset):
-    shutil.rmtree(path_to_save_dataset)   # remove the directory
-os.makedirs(path_to_save_dataset)
+path_to_segmentation_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/segmentation/'
+path_to_digitization_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/digitization/'
+path_to_temp_dir = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/temp/'
+
+for p in [path_to_segmentation_dataset, path_to_digitization_dataset, path_to_temp_dir]:
+    if os.path.exists(p):
+        shutil.rmtree(p)   # remove the directory
+
+os.makedirs(path_to_segmentation_dataset)
+os.makedirs(path_to_digitization_dataset)
+os.makedirs(path_to_temp_dir)
+
 # Create child directories: test, train, val
 for folder in ["train", "test", "val"]:
-    os.makedirs(os.path.join(path_to_save_dataset, folder))
+    os.makedirs(os.path.join(path_to_segmentation_dataset, folder))
+    os.makedirs(os.path.join(path_to_digitization_dataset, folder))
+    
+    os.makedirs(os.path.join(path_to_segmentation_dataset, folder, "inputs"))
+    os.makedirs(os.path.join(path_to_digitization_dataset, folder, "inputs"))
 
-    os.makedirs(os.path.join(path_to_save_dataset, folder, "original"))
-    os.makedirs(os.path.join(path_to_save_dataset, folder, "input"))
-    os.makedirs(os.path.join(path_to_save_dataset, folder, "label"))
+    os.makedirs(os.path.join(path_to_segmentation_dataset, folder, "labels"))
+    os.makedirs(os.path.join(path_to_digitization_dataset, folder, "labels"))
 
-print(f'directory {path_to_save_dataset} created.')
+print(f'directory {path_to_segmentation_dataset} created.')
+print(f'directory {path_to_digitization_dataset} created.')
 
 
 row_height = 6.265
@@ -108,16 +120,21 @@ for lead_format, each_lead_config in lead_config.items():
             dtset_type = 'test'
         
         sample_name = str(i)+'_'+lead_format
-        export_path = path_to_save_dataset + dtset_type
+        segmentation_export_path = os.path.join(path_to_segmentation_dataset, dtset_type)
+        digitization_export_path = os.path.join(path_to_digitization_dataset, dtset_type)
 
         plt.close("all")
 
-        original_path = os.path.join(export_path, "original")
-        file_path = os.path.join(original_path, sample_name+".jpg")
-        file_bw_path = os.path.join(original_path, sample_name+"-bw.jpg")
+        image_temp_path = path_to_temp_dir
+        image_path = os.path.join(image_temp_path, sample_name+".jpg")
+        blackwhite_path = os.path.join(image_temp_path, sample_name+"-bw.jpg")
 
-        unet_input_path = os.path.join(export_path, "input")
-        unet_label_path = os.path.join(export_path, "label")
+        segmentation_input_path = os.path.join(segmentation_export_path, "inputs")
+        segmentation_output_path = os.path.join(segmentation_export_path, "labels")
+
+        digitization_input_path = os.path.join(digitization_export_path, "inputs")
+        digitization_output_path = os.path.join(digitization_export_path, "labels")
+
 
         log = ecg_plot_v2.plot_v3(
             ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
@@ -133,7 +150,7 @@ for lead_format, each_lead_config in lead_config.items():
             show_separate_line=True,
             row_height=row_height,
             style=None,
-            save_path=file_path)
+            save_path=image_path)
 
         log['padding'] = padding
         log['border'] = border
@@ -142,9 +159,9 @@ for lead_format, each_lead_config in lead_config.items():
         fig = plt.gcf()
         fig.canvas.draw()
         image_array = np.array(fig.canvas.renderer._renderer)
-        ecg_plot_v2.save_as_jpg(file_path)
+        ecg_plot_v2.save_as_jpg(image_path)
 
-        crop_bb(sample=log, export_path=unet_input_path, img_path=file_path, prefix=sample_name+"_")
+        crop_bb(sample=log, export_path=segmentation_input_path, img_path=image_path, prefix=sample_name+"_")
 
         for lead_number in range(each_lead_config['n_leads']+1):
             if lead_number==each_lead_config['n_leads']:
@@ -173,14 +190,14 @@ for lead_format, each_lead_config in lead_config.items():
                 show_separate_line=False,
                 row_height=row_height,
                 style='bw',
-                save_path=file_bw_path)
+                save_path=blackwhite_path)
 
             fig = plt.gcf()
             fig.canvas.draw()
             bw_array = np.array(fig.canvas.renderer._renderer)
-            ecg_plot_v2.save_as_jpg(file_bw_path)
+            ecg_plot_v2.save_as_jpg(blackwhite_path)
 
-            crop_bb(sample=log, export_path=unet_label_path, img_path=file_bw_path, prefix=sample_name+"_", smaple_number=lead_number)
+            crop_bb(sample=log, export_path=digitization_input_path, img_path=blackwhite_path, prefix=sample_name+"_", smaple_number=lead_number)
 
         logs[dtset_type].append(log)
 
@@ -189,5 +206,5 @@ for lead_format, each_lead_config in lead_config.items():
     cnt += n_sample_each_lead
 
 for data_set_type, value in logs.items():
-    with open(f"{os.path.join(path_to_save_dataset, data_set_type + '/')}logs.json", 'w') as f:
+    with open(f"{os.path.join(path_to_segmentation_dataset, data_set_type + '/')}logs.json", 'w') as f:
         json.dump({"frequency": sampling_rate, "samples":value}, f)
