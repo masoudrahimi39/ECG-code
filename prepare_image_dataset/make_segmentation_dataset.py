@@ -12,7 +12,35 @@ sys.path.append("./prepare_image_dataset/adjusted_library")  # in order to impor
 import ecg_plot_v2
 from utils import determine_bb, crop_bb
 from dotenv import load_dotenv
+import cv2
 load_dotenv()
+
+def bw_to_yolo(file_path, export_path):
+  img = cv2.imread(file_path)
+
+  kernel = np.ones((2,2),np.uint8)
+  dilated = cv2.dilate(img,kernel,iterations = 1)
+
+  # Threshold the image to get a binary mask
+  _, binary_mask = cv2.threshold(np.uint8(dilated[:,:,0]), 127, 255, cv2.THRESH_BINARY)
+
+  # Find contours
+  contours, _ = cv2.findContours(binary_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+  contour = sorted(contours, key = lambda x: -cv2.contourArea(x))[0]
+  contour = contour.squeeze(1)
+
+  height, width = img.shape[:2]
+
+  output = ["0"]
+  for i in contour:
+    output.append(f"{i[0]/width:0.04f}")
+    output.append(f"{i[1]/height:0.04f}")
+
+  output = " ".join(output)
+
+  with open(export_path, 'w') as f:
+    f.write(output)
 
 # TODO: look after the frequency
 sampling_rate = 100
@@ -59,7 +87,7 @@ else:
 
 ### convert the signal to ecg image
 dataset_version = 5
-n_sample_each_lead = 3       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+n_sample_each_lead = 1       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
@@ -68,9 +96,11 @@ test_prcnt = 0.2
 padding:int = 30        # it's the padding around the bounding boxes
 border:int = 34         # it's the white border in down left of the image that should be considered in determining the bounding box
 
-path_to_segmentation_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/segmentation/'
-path_to_digitization_dataset = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/digitization/'
-path_to_temp_dir = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0/temp/'
+dataset_path = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0'
+
+path_to_segmentation_dataset = f'{dataset_path}/segmentation/'
+path_to_digitization_dataset = f'{dataset_path}/digitization/'
+path_to_temp_dir = f'{dataset_path}/temp/'
 
 for p in [path_to_segmentation_dataset, path_to_digitization_dataset, path_to_temp_dir]:
     if os.path.exists(p):
@@ -199,12 +229,18 @@ for lead_format, each_lead_config in lead_config.items():
 
             crop_bb(sample=log, export_path=digitization_input_path, img_path=blackwhite_path, prefix=sample_name+"_", smaple_number=lead_number)
 
+            with open(os.path.join(digitization_output_path, f"{sample_name}_lead_{lead_number}.json"), 'w') as f:
+                json.dump(log['leads'][lead_number]['ecg'], f)
+            
+            bw_to_yolo(os.path.join(digitization_input_path, f"{sample_name}_lead_{lead_number}.png"), os.path.join(segmentation_output_path, f"{sample_name}_lead_{lead_number}.txt"))
+
         logs[dtset_type].append(log)
+
 
         cnt2 +=1
 
     cnt += n_sample_each_lead
 
-for data_set_type, value in logs.items():
-    with open(f"{os.path.join(path_to_segmentation_dataset, data_set_type + '/')}logs.json", 'w') as f:
+for dataset_type, value in logs.items():
+    with open(os.path.join(dataset_path, f"logs_segmentation_{dataset_type}.json"), 'w') as f:
         json.dump({"frequency": sampling_rate, "samples":value}, f)
