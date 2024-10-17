@@ -151,6 +151,11 @@ def plot_v3(
         color_minor = (0.75, 0.75, 0.75)
         color_line  = (1, 1, 1)
         face_color = (0, 0, 0)
+    if style == 'binary':
+        color_major = (0, 0, 0)
+        color_minor = (0, 0, 0)
+        color_line  = (1, 1, 1)
+        face_color = (0, 0, 0)
     else:
         color_major = (0.75, 0.5, 0.5) # red            # changed to have different grid line
         color_minor = (1, 0.93, 0.93)                   # changed

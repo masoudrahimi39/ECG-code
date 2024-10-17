@@ -219,7 +219,7 @@ for lead_format, each_lead_config in lead_config.items():
                 show_grid=False, 
                 show_separate_line=False,
                 row_height=row_height,
-                style='bw',
+                style='binary',
                 save_path=blackwhite_path)
 
             fig = plt.gcf()
