@@ -115,8 +115,8 @@ for folder in ["train", "test", "val"]:
     os.makedirs(os.path.join(path_to_segmentation_dataset, folder))
     os.makedirs(os.path.join(path_to_digitization_dataset, folder))
     
-    os.makedirs(os.path.join(path_to_segmentation_dataset, folder, "inputs"))
-    os.makedirs(os.path.join(path_to_digitization_dataset, folder, "inputs"))
+    os.makedirs(os.path.join(path_to_segmentation_dataset, folder, "images"))
+    os.makedirs(os.path.join(path_to_digitization_dataset, folder, "images"))
 
     os.makedirs(os.path.join(path_to_segmentation_dataset, folder, "labels"))
     os.makedirs(os.path.join(path_to_digitization_dataset, folder, "labels"))
@@ -159,10 +159,10 @@ for lead_format, each_lead_config in lead_config.items():
         image_path = os.path.join(image_temp_path, sample_name+".jpg")
         blackwhite_path = os.path.join(image_temp_path, sample_name+"-bw.jpg")
 
-        segmentation_input_path = os.path.join(segmentation_export_path, "inputs")
+        segmentation_input_path = os.path.join(segmentation_export_path, "images")
         segmentation_output_path = os.path.join(segmentation_export_path, "labels")
 
-        digitization_input_path = os.path.join(digitization_export_path, "inputs")
+        digitization_input_path = os.path.join(digitization_export_path, "images")
         digitization_output_path = os.path.join(digitization_export_path, "labels")
 
 
