@@ -1,0 +1,10 @@
+# Numerical/image
+numpy
+scipy
+opencv-python-headless>=4.4
+qimage2ndarray
+
+# Helper
+matplotlib
+pathlib
+dataclasses
