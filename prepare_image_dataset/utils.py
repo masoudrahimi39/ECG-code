@@ -134,13 +134,14 @@ def draw_bb(sample: dict, export_path: str):
     plt.savefig(export_path, dpi=300)
     plt.close()
 
-def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str=""):
+def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str="", smaple_number:int=None):
     """
     Loads an image using img_path. Then, finds the leads using sample, crops them and saves it to the export path
     Input format:
         sample: the dictionary which includes the information of the specified sample
         export_path: the path to export the output image
         img_path: path to the image that should be cropped
+        smaple_number: if this parameter set, it just apply the procedure on one of the leads
     output:
         cropped images saved in the export path
     """
@@ -154,7 +155,13 @@ def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str=""):
     img = Image.open(img_path)
     lead_number = 0
     out = []
-    for c, x, y, w, h in determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None):
+
+    bbs_info = determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None)
+    if not isinstance(smaple_number, type(None)):
+        bbs_info = [bbs_info[2*smaple_number]]
+        lead_number = smaple_number
+    
+    for c, x, y, w, h in bbs_info:
         if c != 0:
             continue
         lead_width = w*img_width
