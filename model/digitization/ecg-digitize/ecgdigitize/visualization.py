@@ -83,7 +83,7 @@ def overlaySignalOnImage(
     assert len(signal.shape) == 1
     assert isinstance(image, ColorImage)
 
-    def quantize(element: np.float64) -> Optional[int]:
+    def quantize(element: float) -> Optional[int]:
         if not np.isnan(element):
             return int(element)
         else:

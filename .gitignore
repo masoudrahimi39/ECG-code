@@ -15,7 +15,8 @@ runs/
 *.pth
 wandb/
 model/detection/inf_img
-model/detection/result*
-
-others_code/
+model/detection/result
+model/digitization/results
+others_code/*
 digi_out
+digi_out2
