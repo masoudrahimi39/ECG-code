@@ -58,13 +58,7 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         min_y_plot = lead['min_y_plot']
         max_y_plot = lead['max_y_plot']
 
-        lead_x_text = lead['x_text']
-        lead_y_text = lead['y_text']
-        lead_fontsize = lead['fontsize']
-        lead_text = lead['text']
-        
-        text_x0, text_y0, text_width, text_height = lead['bbox']
-        
+
         width_lead = max_x_plot - min_x_plot
         height_lead = max_y_plot - min_y_plot
         
@@ -80,8 +74,7 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
         w = int(width_lead_ratio * image_without_borders_width) 
         h = int(height_lead_ratio * image_without_borders_height) 
         
-        x_text_ratio = (lead_x_text-x_min)/width
-        y_text_ratio = (lead_y_text-y_min)/height
+        
 
         label.append((
             0,
@@ -91,14 +84,24 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
             (h + padding) / image_with_borders_height
         ))
 
-        label.append((
-            text_dict[lead_text],
-            (x_text_ratio * image_without_borders_width + border + text_width/2) / image_with_borders_width,
-            ((1-y_text_ratio) * image_without_borders_height - text_height/2) / image_with_borders_height,
-            (text_width + padding) / image_with_borders_width,
-            (text_height + padding) / image_with_borders_height
-        ))
+        if lead['text']:        # only if the lead_name is shown
+            lead_x_text = lead['x_text']
+            lead_y_text = lead['y_text']
+            lead_text = lead['text']
+            
+            text_x0, text_y0, text_width, text_height = lead['bbox']
 
+            x_text_ratio = (lead_x_text-x_min)/width
+            y_text_ratio = (lead_y_text-y_min)/height
+
+            label.append((
+                text_dict[lead_text],
+                (x_text_ratio * image_without_borders_width + border + text_width/2) / image_with_borders_width,
+                ((1-y_text_ratio) * image_without_borders_height - text_height/2) / image_with_borders_height,
+                (text_width + padding) / image_with_borders_width,
+                (text_height + padding) / image_with_borders_height
+            ))
+        
     if save_bb_path:
         # change the format of the label in order to write all of the label in one flush rather than writing each line seperately.
         label = '\n'.join(' '.join(str(float_val) for float_val in tup) for tup in label)
@@ -158,8 +161,9 @@ def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str="", smaple_nu
 
     bbs_info = determine_bb(sample=sample, mode='load_image', save_bb_path=None, img_array=None)
     if not isinstance(smaple_number, type(None)):
-        bbs_info = [bbs_info[2*smaple_number]]
-        lead_number = smaple_number
+        if sample['leads'][0]['text']:   # if we have show_lead_name, then this value is true and we have twice bounding boxes (each lead have one bb for text and one for lead)
+            bbs_info = [bbs_info[2*smaple_number]]
+            lead_number = smaple_number
     
     for c, x, y, w, h in bbs_info:
         if c != 0:
