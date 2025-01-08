@@ -164,6 +164,9 @@ def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str="", smaple_nu
         if sample['leads'][0]['text']:   # if we have show_lead_name, then this value is true and we have twice bounding boxes (each lead have one bb for text and one for lead)
             bbs_info = [bbs_info[2*smaple_number]]
             lead_number = smaple_number
+        else:
+            bbs_info = [bbs_info[smaple_number]]
+            lead_number = smaple_number
     
     for c, x, y, w, h in bbs_info:
         if c != 0:
