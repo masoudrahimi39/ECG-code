@@ -92,7 +92,8 @@ train_prcnt = 0.6
 val_prcnt = 0.2
 test_prcnt = 0.2
 
-padding:int = 10        # it's the padding around the bounding boxes
+padding_x:int = 10        # it's the padding around the bounding boxes
+padding_y:int = 30        # it's the padding around the bounding boxes
 border:int = 10         # it's the white border in down left of the image that should be considered in determining the bounding box
 
 dataset_path = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0'
@@ -186,7 +187,8 @@ for lead_format, each_lead_config in lead_config.items():
             save_path=image_path,
             dpi=dpi)
 
-        log['padding'] = padding
+        log['padding_x'] = padding_x
+        log['padding_y'] = padding_y
         log['border'] = border
 
         # convert the ploted image to an np.array in order to have the image array

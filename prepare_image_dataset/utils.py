@@ -30,7 +30,8 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
     # elif mode == 'online':
     #     img_array = img_array[:-34, 34:, :]   # we have white border in the left and down of the image, so these borders are removed here
     
-    padding = sample['padding']
+    padding_x = sample['padding_x']
+    padding_y = sample['padding_y']
     border = sample['border']
     
     img_size = img_array.shape
@@ -80,8 +81,8 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
             0,
             (x + w/2) / image_with_borders_width,
             (y + h/2) / image_with_borders_height,
-            (w + padding) / image_with_borders_width,
-            (h + padding) / image_with_borders_height
+            (w + padding_x) / image_with_borders_width,
+            (h + padding_y) / image_with_borders_height
         ))
 
         if lead['text']:        # only if the lead_name is shown
@@ -98,8 +99,8 @@ def determine_bb(*, sample: dict, mode:str, save_bb_path: str, img_array):
                 text_dict[lead_text],
                 (x_text_ratio * image_without_borders_width + border + text_width/2) / image_with_borders_width,
                 ((1-y_text_ratio) * image_without_borders_height - text_height/2) / image_with_borders_height,
-                (text_width + padding) / image_with_borders_width,
-                (text_height + padding) / image_with_borders_height
+                (text_width + padding_x) / image_with_borders_width,
+                (text_height + padding_y) / image_with_borders_height
             ))
         
     if save_bb_path:
