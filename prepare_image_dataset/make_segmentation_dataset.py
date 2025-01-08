@@ -84,17 +84,17 @@ else:
     X = np.load(f'{os.getenv("signal_dataset_path")}all_signals_{sampling_rate}Hz.npy')
     print(f'all_signals_{sampling_rate}Hz.npy file loaded')
 
-
+dpi = 175
 ### convert the signal to ecg image
-dataset_version = 5
-n_sample_each_lead = 1       # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+dataset_version = 7
+n_sample_each_lead = 1      # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
 test_prcnt = 0.2
 
-padding:int = 30        # it's the padding around the bounding boxes
-border:int = 34         # it's the white border in down left of the image that should be considered in determining the bounding box
+padding:int = 10        # it's the padding around the bounding boxes
+border:int = 10         # it's the white border in down left of the image that should be considered in determining the bounding box
 
 dataset_path = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0'
 
@@ -128,12 +128,16 @@ print(f'directory {path_to_digitization_dataset} created.')
 row_height = 6.265
 lead_index = ['I', 'II', 'III', 'aVL', 'aVR', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']  # order of the leads in the dataset
 lead_display = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'] # order of the lead that I want to be shown
-lead_config = {'3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None, 'n_leads': 3}, 
-               '3by4': {'n_column':4, 'length': 250, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12},
-               '12by1':  {'n_column':1, 'length': 1000, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': None, 'n_leads': 12}, 
-               '6by2': {'n_column':2, 'length': 500, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12}, 
+lead_config = {
+                # '3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None, 'n_leads': 3}, 
+               '3by4': {'n_column':4, 'length': 250, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 
+                        # 'full_ecg_name': 'II', 
+                        'full_ecg_name': None,
+                        'n_leads': 12},
+            #    '12by1':  {'n_column':1, 'length': 1000, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': None, 'n_leads': 12}, 
+            #    '6by2': {'n_column':2, 'length': 500, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12}, 
                }  # key determines lead format, value determines some variable passing to ecg_plot_vs.plot
-
+#TODO: the above lead_config should be uncommented. I wanted to create dataset containing only one lead format for initial development of UNet
 cnt = 0   # it is used to handle the number of images for each lead
 logs = {'train': [], 'test': [], 'val': []}
 #TODO: now, some values are fixed but we should choose them randomly. (records for train, validation, test - records for each lead)
@@ -175,12 +179,13 @@ for lead_format, each_lead_config in lead_config.items():
             lead_index=lead_index,
             title='', 
             lead_order=each_lead_config['lead_order'],
-            show_lead_name=True,
+            show_lead_name=False,
             show_grid=True, 
-            show_separate_line=True,
+            show_separate_line=False,
             row_height=row_height,
             style=None,
-            save_path=image_path)
+            save_path=image_path,
+            dpi=dpi)
 
         log['padding'] = padding
         log['border'] = border
@@ -189,7 +194,7 @@ for lead_format, each_lead_config in lead_config.items():
         fig = plt.gcf()
         fig.canvas.draw()
         image_array = np.array(fig.canvas.renderer._renderer)
-        ecg_plot_v2.save_as_jpg(image_path)
+        ecg_plot_v2.save_as_jpg(image_path, dpi=dpi)
 
         crop_bb(sample=log, export_path=segmentation_input_path, img_path=image_path, prefix=sample_name+"_")
 
@@ -220,12 +225,13 @@ for lead_format, each_lead_config in lead_config.items():
                 show_separate_line=False,
                 row_height=row_height,
                 style='binary',
-                save_path=blackwhite_path)
+                save_path=blackwhite_path,
+                dpi=dpi)
 
             fig = plt.gcf()
             fig.canvas.draw()
             bw_array = np.array(fig.canvas.renderer._renderer)
-            ecg_plot_v2.save_as_jpg(blackwhite_path)
+            ecg_plot_v2.save_as_jpg(blackwhite_path, dpi=dpi)
 
             crop_bb(sample=log, export_path=digitization_input_path, img_path=blackwhite_path, prefix=sample_name+"_", smaple_number=lead_number)
 
