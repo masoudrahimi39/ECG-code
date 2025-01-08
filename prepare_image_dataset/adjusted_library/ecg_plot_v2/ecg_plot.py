@@ -97,12 +97,13 @@ def plot_v3(
         show_lead_name = True,
         show_grid      = True,
         show_separate_line  = True,
-        save_path: str = None
+        save_path: str = None,
+        dpi:int = None,
         ):
     """Plot multi lead ECG chart.
     # Arguments
         ecg        : m x n ECG signal data, which m is number of leads and n is length of signal.
-        full_ecg_name: the name of the full ecg. if `None`, then no lead wil be printed completely.
+        full_ecg_name: the name of the full ecg. if `None`, then no full lead wil be printed completely.
         full_ecg   : signal of the lead that you want to be printed completely. It works if full_ecg_name is assigned
         
         sample_rate: Sample rate of the signal.
@@ -172,7 +173,7 @@ def plot_v3(
         "leads": []
     }
 
-    fig, ax = plt.subplots(dpi= 700)
+    fig, ax = plt.subplots(dpi= dpi)
     for c in range(num_columns):
         for r in range(num_rows):
             idx = c*num_rows + r
@@ -189,8 +190,10 @@ def plot_v3(
             ax.set_facecolor(face_color)
             if show_lead_name:
                 bbox = ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
+                lead_name = lead_index[idx]
             else:
                 bbox = None
+                lead_name = None
 
             output_log['leads'].append({
                 "min_x_plot": min(x_signal),
@@ -201,7 +204,7 @@ def plot_v3(
                 "y_text": y_text,
                 "bbox": bbox,
                 "fontsize": fontsize,
-                "text": lead_index[idx],
+                "text": lead_name,
                 "ecg": list(ecg[idx]),
             })
 
@@ -514,6 +517,7 @@ def plot_1(ecg, sample_rate=500, title = 'ECG', fig_width = 15, fig_height = 2, 
     
 DEFAULT_PATH = './'
 show_counter = 1
+
 def show_svg(tmp_path = DEFAULT_PATH):
     """Plot multi lead ECG chart.
     # Arguments
@@ -552,12 +556,12 @@ def save_as_svg(file_name, path = DEFAULT_PATH):
     plt.savefig(path + file_name + '.svg')
     plt.close()
 
-def save_as_jpg(save_path):
+def save_as_jpg(save_path, dpi):
     """Plot multi lead ECG chart.
     # Arguments
         file_name: file_name
         path     : path to save image, defaults to current folder
     """
     plt.ioff()
-    plt.savefig(save_path, bbox_inches='tight', pad_inches=0)
+    plt.savefig(save_path, bbox_inches='tight', pad_inches=0, dpi=dpi)
     plt.close()
