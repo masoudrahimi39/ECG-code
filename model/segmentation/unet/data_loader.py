@@ -12,16 +12,27 @@ from torch.optim import lr_scheduler
 import segmentation_models_pytorch as smp
 import pytorch_lightning as pl
 
-# DATA_DIR = "./data/CamVid/"
+'https://segmentation-modelspytorch.readthedocs.io/en/latest/index.html#'
 
-x_train_dir = r'D:/Education/4_ECG_digitization/ECG-code/datasets/image_dataset_v7.0/segmentation/train/images'
-y_train_dir = r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\train\labels'
 
-x_valid_dir = r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\val\images'
-y_valid_dir = r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\val\labels'
+def scale_up_img_size(image, divisible_by=32):
+    '''Calculate new dimensions for image that are divisible by 32 as it is necessary for UNet input to be divisible by 32'''
+    target_height = ((image.shape[0] + divisible_by-1) // divisible_by) * divisible_by  # Round up to nearest multiple of divisible_by
+    target_width = ((image.shape[1] + divisible_by-1) // divisible_by) * divisible_by
 
-x_test_dir = r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\test\images'
-y_test_dir = r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\test\labels'
+    # Calculate padding amounts
+    pad_height = target_height - image.shape[0]
+    pad_width = target_width - image.shape[1]
+    pad_top = pad_height // 2
+    pad_bottom = pad_height - pad_top
+    pad_left = pad_width // 2
+    pad_right = pad_width - pad_left
+    
+    if len(image.shape) == 2:
+        image = np.pad(image, ((pad_top, pad_bottom), (pad_left, pad_right)), mode='constant', constant_values=0)
+    elif len(image.shape) == 3:
+        image = np.pad(image, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), mode='constant', constant_values=0)
+    return image
 
 class Dataset(BaseDataset):
     """CamVid Dataset. Read images, apply augmentation transformations.
@@ -35,10 +46,7 @@ class Dataset(BaseDataset):
 
     """
 
-    CLASSES = [
-        "signal",
-        "unlabelled",
-    ]
+    CLASSES = ["signal", "unlabelled", ]
 
     def __init__(
         self,
@@ -51,21 +59,23 @@ class Dataset(BaseDataset):
         self.mask_ids = os.listdir(masks_dir)
         self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.image_ids]
         self.masks_fps = [os.path.join(masks_dir, mask_id) for mask_id in self.mask_ids]
-        # self.masks_fps = [os.path.join(masks_dir, os.path.splitext(image_id)[0] + '.bmp') for image_id in self.ids]
 
         # convert str names to class values on masks
         self.class_values = [self.CLASSES.index(cls.lower()) for cls in classes]
-
         self.augmentation = augmentation
+        self.transform = transform
+    
     
     def __getitem__(self, i):
         image = cv2.imread(self.images_fps[i]) 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # BGR-->RGB
+        image = scale_up_img_size(image, divisible_by=32) # scale up image width and height
 
         mask = Image.open(self.masks_fps[i]).convert('L')  # load single channel
         mask = np.array(mask) 
+        mask = scale_up_img_size(mask, divisible_by=32)
         assert np.all(np.isin(mask, [0, 1])), "Mask contains non-binary values"
-
+        
         # extract certain classes from mask (e.g. cars)
         masks = [(mask == v) for v in self.class_values]
         mask = np.stack(masks, axis=-1).astype("float")
@@ -79,6 +89,7 @@ class Dataset(BaseDataset):
 
     def __len__(self):
         return len(self.ids)
+
 
 
 # helper function for data visualization
@@ -145,11 +156,16 @@ def get_validation_augmentation():
 
 
 if __name__ == '__main__':
+    x_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/images'
+    y_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/labels'
+
     dataset = Dataset(x_train_dir, y_train_dir, 
-                      augmentation=get_training_augmentation(), 
+                    #   augmentation=get_training_augmentation(), 
+                      augmentation=None,
                       classes=["signal"])
     
-    for i in range(3):
-        image, mask = dataset[3]
-        visualize(image=image, mask=mask.squeeze())
+    for i in range(1):
+        image, mask = dataset[i]
+
+        # visualize(image=image, mask=mask.squeeze())
     
