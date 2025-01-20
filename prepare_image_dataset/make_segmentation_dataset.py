@@ -83,10 +83,10 @@ else:
     X = np.load(f'{os.getenv("signal_dataset_path")}all_signals_{sampling_rate}Hz.npy')
     print(f'all_signals_{sampling_rate}Hz.npy file loaded')
 
-dpi = 500
+dpi = 250
 ### convert the signal to ecg image
 dataset_version = 7
-n_sample_each_lead = 2      # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+n_sample_each_lead = 2000      # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
