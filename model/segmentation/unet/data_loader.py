@@ -63,7 +63,6 @@ class Dataset(BaseDataset):
         # convert str names to class values on masks
         self.class_values = [self.CLASSES.index(cls.lower()) for cls in classes]
         self.augmentation = augmentation
-        self.transform = transform
     
     
     def __getitem__(self, i):
@@ -88,7 +87,7 @@ class Dataset(BaseDataset):
         return image.transpose(2, 0, 1), mask.transpose(2, 0, 1)
 
     def __len__(self):
-        return len(self.ids)
+        return len(self.image_ids)
 
 
 
