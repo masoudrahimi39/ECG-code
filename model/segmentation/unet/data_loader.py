@@ -13,11 +13,12 @@ import segmentation_models_pytorch as smp
 import pytorch_lightning as pl
 
 'https://segmentation-modelspytorch.readthedocs.io/en/latest/index.html#'
+'https://github.com/qubvel-org/segmentation_models.pytorch/blob/main/examples/binary_segmentation_intro.ipynb'
 
-
-def scale_up_img_size(image, divisible_by=32):
+def scale_up_img_size(image, target_height, divisible_by=32):
     '''Calculate new dimensions for image that are divisible by 32 as it is necessary for UNet input to be divisible by 32'''
-    target_height = ((image.shape[0] + divisible_by-1) // divisible_by) * divisible_by  # Round up to nearest multiple of divisible_by
+    
+    # target_height = ((image.shape[0] + divisible_by-1) // divisible_by) * divisible_by  # Round up to nearest multiple of divisible_by
     target_width = ((image.shape[1] + divisible_by-1) // divisible_by) * divisible_by
 
     # Calculate padding amounts
@@ -46,15 +47,17 @@ class Dataset(BaseDataset):
 
     """
 
-    CLASSES = ["signal", "unlabelled", ]
+    CLASSES = ["signal"]
 
     def __init__(
         self,
         images_dir,
         masks_dir,
+        max_height,      # maximum height of images. as you know, we crop the leads and it will have different height
         classes=None,
         augmentation=None,
-    ):
+    ): 
+        self.max_height = max_height
         self.image_ids = os.listdir(images_dir)
         self.mask_ids = os.listdir(masks_dir)
         self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.image_ids]
@@ -66,18 +69,27 @@ class Dataset(BaseDataset):
     
     
     def __getitem__(self, i):
+
         image = cv2.imread(self.images_fps[i]) 
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # BGR-->RGB
-        image = scale_up_img_size(image, divisible_by=32) # scale up image width and height
+
+        if image.shape[0] > self.max_height:
+            print(f"Skipping image {self.images_fps[i]} as its height {image.shape[0]} is greater than maximum height{self.max_height}")
+            return self.__getitem__((i + 1) % len(self))
+        
+        image = scale_up_img_size(image, divisible_by=32, target_height=self.max_height) # scale up image width and height
 
         mask = Image.open(self.masks_fps[i]).convert('L')  # load single channel
         mask = np.array(mask) 
-        mask = scale_up_img_size(mask, divisible_by=32)
+
+        
+        mask = scale_up_img_size(mask, divisible_by=32, target_height=self.max_height)
         assert np.all(np.isin(mask, [0, 1])), "Mask contains non-binary values"
         
         # extract certain classes from mask (e.g. cars)
         masks = [(mask == v) for v in self.class_values]
         mask = np.stack(masks, axis=-1).astype("float")
+        mask = 1 - mask                                    # convert 1 to 0 and 0 to 1 since the background should be 0 and signal should be 1
 
         # apply augmentations
         if self.augmentation:
@@ -159,6 +171,7 @@ if __name__ == '__main__':
     y_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/labels'
 
     dataset = Dataset(x_train_dir, y_train_dir, 
+                      max_height=320,
                     #   augmentation=get_training_augmentation(), 
                       augmentation=None,
                       classes=["signal"])

@@ -27,12 +27,13 @@ y_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/labels'
 
 augmentation = None
 CLASSES = ["signal"]
-train_dataset = Dataset(x_train_dir, y_train_dir, augmentation=None, classes=CLASSES,)
-valid_dataset = Dataset(x_valid_dir, y_valid_dir, augmentation=None, classes=CLASSES,)   #! if you want to add augmentation, you should use validaton augmentation
-test_dataset = Dataset( x_test_dir, y_test_dir, augmentation=None, classes=CLASSES,)
+max_height = 320           # since height of the images are different (because we use cropping based on lead detection), we have to set a max height to ensuer consistent image shape
+train_dataset = Dataset(x_train_dir, y_train_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
+valid_dataset = Dataset(x_valid_dir, y_valid_dir, max_height=max_height, augmentation=None, classes=CLASSES,)   #! if you want to add augmentation, you should use validaton augmentation
+test_dataset = Dataset( x_test_dir, y_test_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
 
 train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-valid_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False, num_workers=4)
+valid_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False, num_workers=4, persistent_workers=True)
 test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4)
 
 
