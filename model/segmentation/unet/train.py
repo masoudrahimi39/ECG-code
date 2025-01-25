@@ -17,41 +17,16 @@ import segmentation_models_pytorch as smp
 import pytorch_lightning as pl
 
 
-# load the data
-x_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/images'
-y_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/labels'
-x_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/images'
-y_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/labels'
-x_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/images'
-y_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/labels'
-
-augmentation = None
-CLASSES = ["signal"]
-max_height = 320           # since height of the images are different (because we use cropping based on lead detection), we have to set a max height to ensuer consistent image shape
-train_dataset = Dataset(x_train_dir, y_train_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
-valid_dataset = Dataset(x_valid_dir, y_valid_dir, max_height=max_height, augmentation=None, classes=CLASSES,)   #! if you want to add augmentation, you should use validaton augmentation
-test_dataset = Dataset( x_test_dir, y_test_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
-
-train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4)
-valid_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False, num_workers=4, persistent_workers=True)
-test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4)
-
-
-# Some training hyperparameters
-EPOCHS = 1
-T_MAX = EPOCHS * len(train_loader)
-# Always include the background as a class
-OUT_CLASSES = len(train_dataset.CLASSES)
-
 
 class CamVidModel(pl.LightningModule):
-    def __init__(self, arch, encoder_name, in_channels, out_classes, **kwargs):
+    def __init__(self, arch, encoder_name, in_channels, out_classes, activation, **kwargs):
         super().__init__()
         self.model = smp.create_model(
             arch,
             encoder_name=encoder_name,
             in_channels=in_channels,
             classes=out_classes,
+            activation=activation,
             **kwargs,
         )
         # preprocessing parameteres for image
@@ -195,7 +170,34 @@ class CamVidModel(pl.LightningModule):
 
 if __name__ == '__main__':
 
-    model = CamVidModel("FPN", "resnext50_32x4d", in_channels=3, out_classes=OUT_CLASSES)
+    # load the data
+    x_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/images'
+    y_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/labels'
+    x_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/images'
+    y_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/labels'
+    x_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/images'
+    y_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/labels'
+
+    augmentation = None
+    CLASSES = ["signal"]
+    max_height = 320           # since height of the images are different (because we use cropping based on lead detection), we have to set a max height to ensuer consistent image shape
+    train_dataset = Dataset(x_train_dir, y_train_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
+    valid_dataset = Dataset(x_valid_dir, y_valid_dir, max_height=max_height, augmentation=None, classes=CLASSES,)   #! if you want to add augmentation, you should use validaton augmentation
+    test_dataset = Dataset( x_test_dir, y_test_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
+
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4, persistent_workers=True)
+    valid_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False, num_workers=4, persistent_workers=True)
+    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, persistent_workers=True)
+
+
+    # Some training hyperparameters
+    EPOCHS = 1
+    T_MAX = EPOCHS * len(train_loader)
+    # Always include the background as a class
+    OUT_CLASSES = len(train_dataset.CLASSES)
+
+
+    model = CamVidModel("Unet", "resnet34", in_channels=3, out_classes=OUT_CLASSES, activation='sigmoid')
 
     trainer = pl.Trainer(max_epochs=EPOCHS, log_every_n_steps=1)
 
@@ -219,24 +221,26 @@ if __name__ == '__main__':
         model.eval()
         logits = model(images)
     pr_masks = logits.sigmoid()
+
+    plt.figure(figsize=(15, 20))
     for idx, (image, gt_mask, pr_mask) in enumerate(zip(images, masks, pr_masks)):
-        # Number of samples visualized
-        if idx <= 4:
-            plt.figure(figsize=(10, 5))
-            plt.subplot(1, 3, 1)
+        if idx < 4:  # Show 4 rows
+            plt.subplot(4, 3, idx*3 + 1)
             plt.imshow(image.numpy().transpose(1, 2, 0))
             plt.title("Image")
             plt.axis("off")
 
-            plt.subplot(1, 3, 2)
+            plt.subplot(4, 3, idx*3 + 2)
             plt.imshow(gt_mask.numpy().squeeze())
             plt.title("Ground truth")
             plt.axis("off")
 
-            plt.subplot(1, 3, 3)
+            plt.subplot(4, 3, idx*3 + 3)
             plt.imshow(pr_mask.numpy().squeeze())
             plt.title("Prediction")
             plt.axis("off")
-            plt.show()
         else:
             break
+    plt.tight_layout()
+    plt.show()
+    
