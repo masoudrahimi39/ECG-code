@@ -20,9 +20,9 @@ import pytorch_lightning as pl
 # load the data
 x_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/images'
 y_train_dir = 'datasets/image_dataset_v7.0/segmentation/train/labels'
-x_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/labels'
+x_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/images'
 y_valid_dir = 'datasets/image_dataset_v7.0/segmentation/val/labels'
-x_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/labels'
+x_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/images'
 y_test_dir = 'datasets/image_dataset_v7.0/segmentation/test/labels'
 
 augmentation = None
@@ -191,49 +191,51 @@ class CamVidModel(pl.LightningModule):
             },
         }
         return
-    
-model = CamVidModel("FPN", "resnext50_32x4d", in_channels=3, out_classes=OUT_CLASSES)
 
-trainer = pl.Trainer(max_epochs=EPOCHS, log_every_n_steps=1)
+if __name__ == '__main__':
 
-trainer.fit(
-    model,
-    train_dataloaders=train_loader,
-    val_dataloaders=valid_loader,
-)
+    model = CamVidModel("FPN", "resnext50_32x4d", in_channels=3, out_classes=OUT_CLASSES)
 
-# run validation dataset
-valid_metrics = trainer.validate(model, dataloaders=valid_loader, verbose=False)
-print(valid_metrics)
+    trainer = pl.Trainer(max_epochs=EPOCHS, log_every_n_steps=1)
 
-# run test dataset
-test_metrics = trainer.test(model, dataloaders=test_loader, verbose=False)
-print(test_metrics)
+    trainer.fit(
+        model,
+        train_dataloaders=train_loader,
+        val_dataloaders=valid_loader,
+    )
+
+    # run validation dataset
+    valid_metrics = trainer.validate(model, dataloaders=valid_loader, verbose=False)
+    print(valid_metrics)
+
+    # run test dataset
+    test_metrics = trainer.test(model, dataloaders=test_loader, verbose=False)
+    print(test_metrics)
 
 
-images, masks = next(iter(test_loader))
-with torch.no_grad():
-    model.eval()
-    logits = model(images)
-pr_masks = logits.sigmoid()
-for idx, (image, gt_mask, pr_mask) in enumerate(zip(images, masks, pr_masks)):
-    # Number of samples visualized
-    if idx <= 4:
-        plt.figure(figsize=(10, 5))
-        plt.subplot(1, 3, 1)
-        plt.imshow(image.numpy().transpose(1, 2, 0))
-        plt.title("Image")
-        plt.axis("off")
+    images, masks = next(iter(test_loader))
+    with torch.no_grad():
+        model.eval()
+        logits = model(images)
+    pr_masks = logits.sigmoid()
+    for idx, (image, gt_mask, pr_mask) in enumerate(zip(images, masks, pr_masks)):
+        # Number of samples visualized
+        if idx <= 4:
+            plt.figure(figsize=(10, 5))
+            plt.subplot(1, 3, 1)
+            plt.imshow(image.numpy().transpose(1, 2, 0))
+            plt.title("Image")
+            plt.axis("off")
 
-        plt.subplot(1, 3, 2)
-        plt.imshow(gt_mask.numpy().squeeze())
-        plt.title("Ground truth")
-        plt.axis("off")
+            plt.subplot(1, 3, 2)
+            plt.imshow(gt_mask.numpy().squeeze())
+            plt.title("Ground truth")
+            plt.axis("off")
 
-        plt.subplot(1, 3, 3)
-        plt.imshow(pr_mask.numpy().squeeze())
-        plt.title("Prediction")
-        plt.axis("off")
-        plt.show()
-    else:
-        break
+            plt.subplot(1, 3, 3)
+            plt.imshow(pr_mask.numpy().squeeze())
+            plt.title("Prediction")
+            plt.axis("off")
+            plt.show()
+        else:
+            break
