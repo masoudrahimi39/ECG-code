@@ -83,10 +83,10 @@ else:
     X = np.load(f'{os.getenv("signal_dataset_path")}all_signals_{sampling_rate}Hz.npy')
     print(f'all_signals_{sampling_rate}Hz.npy file loaded')
 
-dpi = 500
+dpi = 250
 ### convert the signal to ecg image
 dataset_version = 7
-n_sample_each_lead = 2      # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
+n_sample_each_lead = 2000      # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
 # percent of train, validation, and test sets
 train_prcnt = 0.6
 val_prcnt = 0.2
@@ -234,12 +234,13 @@ for lead_format, each_lead_config in lead_config.items():
             bw_array = np.array(fig.canvas.renderer._renderer)
             ecg_plot_v2.save_as_jpg(blackwhite_path, dpi=dpi)
 
+            crop_bb(sample=log, export_path=segmentation_output_path, img_path=blackwhite_path, prefix=sample_name+"_", smaple_number=lead_number, save_bmp=True)
             crop_bb(sample=log, export_path=digitization_input_path, img_path=blackwhite_path, prefix=sample_name+"_", smaple_number=lead_number)
 
             with open(os.path.join(digitization_output_path, f"{sample_name}_lead_{lead_number}.json"), 'w') as f:
                 json.dump(log['leads'][lead_number]['ecg'], f)
             
-            bw_to_yolo(os.path.join(digitization_input_path, f"{sample_name}_lead_{lead_number}.png"), os.path.join(segmentation_output_path, f"{sample_name}_lead_{lead_number}.txt"))
+            # bw_to_yolo(os.path.join(digitization_input_path, f"{sample_name}_lead_{lead_number}.png"), os.path.join(segmentation_output_path, f"{sample_name}_lead_{lead_number}.txt"))
 
         logs[dtset_type].append(log)
 

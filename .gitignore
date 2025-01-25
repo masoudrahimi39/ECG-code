@@ -23,3 +23,4 @@ digi_out2
 model/segmentation/unet/temp.ipynb
 model/segmentation/unet/train.ipynb
 lightning_logs
+model/segmentation/unet/data

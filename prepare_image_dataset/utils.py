@@ -138,7 +138,7 @@ def draw_bb(sample: dict, export_path: str):
     plt.savefig(export_path, dpi=300)
     plt.close()
 
-def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str="", smaple_number:int=None):
+def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str="", smaple_number:int=None, save_bmp:bool=False):
     """
     Loads an image using img_path. Then, finds the leads using sample, crops them and saves it to the export path
     Input format:
@@ -179,7 +179,13 @@ def crop_bb(sample:dict, export_path:str, img_path:str, prefix:str="", smaple_nu
         cropped = img.crop((start_x, start_y, end_x, end_y))
         out.append(cropped)
         if export_path:
-            cropped.save(os.path.join(export_path, f"{prefix}lead_{lead_number}.png"))
+            if save_bmp:
+                cropped = np.array(cropped)
+                cropped = cropped>100
+                cropped = np.uint8(cropped)
+                plt.imsave(os.path.join(export_path, f"{prefix}lead_{lead_number}.bmp"), cropped, cmap='gray', format='bmp')
+            else:
+                cropped.save(os.path.join(export_path, f"{prefix}lead_{lead_number}.png"))
         lead_number += 1
     return out
 
