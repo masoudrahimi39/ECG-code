@@ -199,7 +199,27 @@ if __name__ == '__main__':
 
     model = CamVidModel("Unet", "resnet34", in_channels=3, out_classes=OUT_CLASSES, activation='sigmoid')
 
-    trainer = pl.Trainer(max_epochs=EPOCHS, log_every_n_steps=1)
+    save_dir = 'model/segmentation/unet'
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+            filename='best-model-{epoch:02d}-{val_loss:.2f}',
+            save_top_k=1,
+            monitor='valid_dataset_iou',
+            mode='max'
+        )
+    early_stop_callback = pl.callbacks.EarlyStopping(
+        monitor='valid_dataset_iou',
+        patience=10,
+        mode='max'
+    )
+    # logger = pl.loggers.TensorBoardLogger(save_dir)
+    trainer = pl.Trainer(max_epochs=EPOCHS,
+                     default_root_dir=save_dir,
+                     enable_checkpointing=True,
+                     enable_progress_bar=True,
+                     callbacks=[checkpoint_callback, early_stop_callback],
+                    #  logger=logger,
+                     )
+
 
     trainer.fit(
         model,
