@@ -15,10 +15,21 @@ class SegmentationInference:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         
         checkpoint = torch.load(model_path, map_location=self.device)
-        if "model" in checkpoint:
-            self.model.load_state_dict(checkpoint["model"], strict=False)
-        else:
-            self.model.load_state_dict(checkpoint, strict=False)
+        model_dict = self.model.state_dict()
+        missing_keys = []
+        for key in model_dict.keys():
+            key_in_checkpoint = 'model.'+key
+            if key_in_checkpoint in checkpoint:
+                model_dict[key] = checkpoint[key_in_checkpoint]
+            else:
+                missing_keys.append(key)
+        
+        self.model.load_state_dict(model_dict, strict=False)
+        
+        if missing_keys:
+            print("Warning: The following keys were not found in the checkpoint:")
+            for key in missing_keys:
+                print(key)
         
         self.model.to(self.device)
         self.model.eval()
