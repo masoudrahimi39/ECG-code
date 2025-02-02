@@ -1,9 +1,11 @@
 import torch
 import numpy as np
 import cv2
+from PIL import Image
 import matplotlib.pyplot as plt
 import segmentation_models_pytorch as smp
 from torchvision import transforms
+from .data_loader import scale_up_img_size
 
 # Define the inference class
 class SegmentationInference:
@@ -36,18 +38,20 @@ class SegmentationInference:
         
         # Get preprocessing parameters
         params = smp.encoders.get_preprocessing_params(encoder_name)
-        self.mean = torch.tensor(params["mean"]).view(1, 3, 1, 1).to(self.device)
-        self.std = torch.tensor(params["std"]).view(1, 3, 1, 1).to(self.device)
+        self.mean = checkpoint['mean'].view(1, 3, 1, 1).to(self.device) # torch.tensor(params["mean"]).view(1, 3, 1, 1).to(self.device)
+        self.std = checkpoint['std'].view(1, 3, 1, 1).to(self.device) # torch.tensor(params["std"]).view(1, 3, 1, 1).to(self.device)
 
-    def preprocess(self, image_path, img_size=(320, 320)):
-        """Preprocess input image."""
-        image = cv2.imread(image_path)
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        image = cv2.resize(image, img_size)
-        image = image.astype(np.float32) / 255.0  # Normalize
-        image = torch.from_numpy(image).permute(2, 0, 1).unsqueeze(0).to(self.device)  # HWC -> CHW, add batch dim
-        image = (image - self.mean) / self.std  # Normalize using encoder params
-        return image
+        self.max_height = 320
+
+    # def preprocess(self, image_path, img_size=(320, 320)):
+    #     """Preprocess input image."""
+    #     image = cv2.imread(image_path)
+    #     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    #     image = cv2.resize(image, img_size)
+    #     image = image.astype(np.float32) / 255.0  # Normalize
+    #     image = torch.from_numpy(image).permute(2, 0, 1).unsqueeze(0).to(self.device)  # HWC -> CHW, add batch dim
+    #     image = (image - self.mean) / self.std  # Normalize using encoder params
+    #     return image
 
     def predict(self, image_tensor):
         """Run inference on the image."""
@@ -57,12 +61,45 @@ class SegmentationInference:
             output = (output > 0.5).float()  # Apply thresholding
         return output.cpu().numpy().squeeze()
 
+    def preprocess(self, image_path):
+        image = cv2.imread(image_path)
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # BGR-->RGB
+
+        if image.shape[0] > self.max_height:
+            print(f"Skipping image {image_path} as its height {image.shape[0]} is greater than maximum height{self.max_height}")
+            return self.__getitem__((i + 1) % len(self))
+        
+        image = scale_up_img_size(image, divisible_by=32, target_height=self.max_height) # scale up image width and height
+
+        # mask = Image.open(self.masks_fps[i]).convert('L')  # load single channel
+        # mask = np.array(mask) 
+
+        
+        # mask = scale_up_img_size(mask, divisible_by=32, target_height=self.max_height)
+        # assert np.all(np.isin(mask, [0, 1])), "Mask contains non-binary values"
+        
+        # extract certain classes from mask (e.g. cars)
+        # masks = [(mask == v) for v in self.class_values]
+        # mask = np.stack(masks, axis=-1).astype("float")
+        # mask = 1 - mask                                    # convert 1 to 0 and 0 to 1 since the background should be 0 and signal should be 1
+
+        # apply augmentations
+        # if self.augmentation:
+        #     sample = self.augmentation(image=image, mask=mask)
+        #     image, mask = sample["image"], sample["mask"]
+        
+        x = image.transpose(2, 0, 1)
+        x = np.expand_dims(x, axis=0)
+        x = torch.tensor(x)
+        return (x-self.mean)/self.std
+
     def visualize(self, image_path):
         """Visualize the original image and predicted mask."""
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_resized = cv2.resize(image, (320, 320))
         image_tensor = self.preprocess(image_path)
+        print(image_tensor.shape)
         mask = self.predict(image_tensor)
         
         plt.figure(figsize=(10, 5))
@@ -82,7 +119,7 @@ class SegmentationInference:
 # Example usage
 if __name__ == "__main__":
     model_path = "model/segmentation/unet/unet-segmentation.pth"
-    image_path = "datasets/image_dataset_v7.0/segmentation/train/images/0_3by4_lead_1.png"
+    image_path = "model/segmentation/unet/img.png"
     
     segmenter = SegmentationInference(model_path)
     segmenter.visualize(image_path)
