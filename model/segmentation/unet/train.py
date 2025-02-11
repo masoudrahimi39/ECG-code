@@ -227,6 +227,8 @@ if __name__ == '__main__':
         val_dataloaders=valid_loader,
     )
 
+    torch.save(model.state_dict(), 'model/segmentation/unet/model123.pth')
+
     # run validation dataset
     valid_metrics = trainer.validate(model, dataloaders=valid_loader, verbose=False)
     print(valid_metrics)
