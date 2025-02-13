@@ -15,6 +15,15 @@ from dotenv import load_dotenv
 import cv2
 load_dotenv()
 
+def get_indices_information(start_index, lead_config, number_each_lead):
+    out = []
+    idx = start_index
+    for i in range(number_each_lead):
+        for lead_format, each_lead_config in lead_config.items():
+            out.append((idx, lead_format, each_lead_config))
+            idx += 1
+    return out, idx
+
 def bw_to_yolo(file_path, export_path):
   img = cv2.imread(file_path)
 
@@ -86,11 +95,11 @@ else:
 dpi = 250
 ### convert the signal to ecg image
 dataset_version = 7
-n_sample_each_lead = 20      # number of images with same lead format; if n_sample_each_lead == 500, first 500 signals will be printed as 3by1 lead format, the next 500 signals will be printed as 3by4 format
-# percent of train, validation, and test sets
-train_prcnt = 0.6
-val_prcnt = 0.2
-test_prcnt = 0.2
+
+# sample each lead for train, validation, and test sets
+sample_each_lead_train = 100
+sample_each_lead_val = 100
+sample_each_lead_test = 100
 
 padding_x:int = 10        # it's the padding around the bounding boxes
 padding_y:int = 30        # it's the padding around the bounding boxes
@@ -130,30 +139,24 @@ lead_index = ['I', 'II', 'III', 'aVL', 'aVR', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5
 lead_display = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'] # order of the lead that I want to be shown
 lead_config = {
                 # '3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None, 'n_leads': 3}, 
-               '3by4': {'n_column':4, 'length': 250, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 
-                        # 'full_ecg_name': 'II', 
+                '3by4': {'n_column':4, 'length': 250, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 
                         'full_ecg_name': None,
                         'n_leads': 12},
-            #    '12by1':  {'n_column':1, 'length': 1000, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': None, 'n_leads': 12}, 
-            #    '6by2': {'n_column':2, 'length': 500, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12}, 
-               }  # key determines lead format, value determines some variable passing to ecg_plot_vs.plot
+                # '12by1':  {'n_column':1, 'length': 1000, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': None, 'n_leads': 12}, 
+                # '6by2': {'n_column':2, 'length': 500, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 'full_ecg_name': 'II', 'n_leads': 12}, 
+            }  # key determines lead format, value determines some variable passing to ecg_plot_vs.plot
 #TODO: the above lead_config should be uncommented. I wanted to create dataset containing only one lead format for initial development of UNet
-cnt = 0   # it is used to handle the number of images for each lead
+
+train_indices, end_idx = get_indices_information(0, lead_config, sample_each_lead_train)
+test_indices, _ = get_indices_information(end_idx, lead_config, sample_each_lead_test)
+val_indices, _ = get_indices_information(X.shape[0]-sample_each_lead_val*len(lead_config), lead_config, sample_each_lead_val)
+
 logs = {'train': [], 'test': [], 'val': []}
-#TODO: now, some values are fixed but we should choose them randomly. (records for train, validation, test - records for each lead)
-for lead_format, each_lead_config in lead_config.items():
-    cnt2 = 0  # to track number of samples in each set (train, validation, test)
-    for i in range(cnt, cnt + n_sample_each_lead):    # using cnt and n_sample_each_lead, we will have first 500 (`step=500`) data in the first lead_format and the next 500 data will be in the second lead_format and so on 
-        
-        # check to put the data in which set (test, train, val)
-        if cnt2 < ceil(train_prcnt*n_sample_each_lead):
-            dtset_type = 'train'
-        elif ceil(train_prcnt*n_sample_each_lead) <= cnt2 < ceil((val_prcnt+train_prcnt)*n_sample_each_lead) :
-            dtset_type = 'val'
-        elif ceil((val_prcnt+train_prcnt)*n_sample_each_lead) <= cnt2 :
-            dtset_type = 'test'
-        
-        sample_name = str(i)+'_'+lead_format
+
+for data_pack, dtset_type in [(train_indices, "train"), (test_indices, "test"), (val_indices, "val")]:
+    for idx, lead_format, each_lead_config in data_pack:
+        print(dtset_type, idx)
+        sample_name = str(idx)+'_'+lead_format
         segmentation_export_path = os.path.join(path_to_segmentation_dataset, dtset_type)
         digitization_export_path = os.path.join(path_to_digitization_dataset, dtset_type)
 
@@ -171,15 +174,15 @@ for lead_format, each_lead_config in lead_config.items():
 
 
         log = ecg_plot_v2.plot_v3(
-            ecg=X[i, :each_lead_config['length'], :each_lead_config['n_leads']].T,
-            full_ecg=X[i, :, 1].T, 
+            ecg=X[idx, :each_lead_config['length'], :each_lead_config['n_leads']].T,
+            full_ecg=X[idx, :, 1].T, 
             full_ecg_name=each_lead_config['full_ecg_name'],
             sample_rate=sampling_rate, 
             columns=each_lead_config['n_column'],
             lead_index=lead_index,
             title='', 
             lead_order=each_lead_config['lead_order'],
-            show_lead_name=False,
+            show_lead_name=True,
             show_grid=True, 
             show_separate_line=False,
             row_height=row_height,
@@ -201,16 +204,16 @@ for lead_format, each_lead_config in lead_config.items():
 
         for lead_number in range(each_lead_config['n_leads']+1):
             if lead_number==each_lead_config['n_leads']:
-                inserted_signal = np.zeros_like(X[i, :each_lead_config['length'], :each_lead_config['n_leads']])
-                inserted_full = X[i, :, 1]
+                inserted_signal = np.zeros_like(X[idx, :each_lead_config['length'], :each_lead_config['n_leads']])
+                inserted_full = X[idx, :, 1]
 
                 if isinstance(each_lead_config['full_ecg_name'], type(None)):
                     continue
             else:
-                inserted_signal = np.zeros_like(X[i, :each_lead_config['length'], :each_lead_config['n_leads']])
-                inserted_signal[:,lead_number] = X[i, :each_lead_config['length'], lead_number]
+                inserted_signal = np.zeros_like(X[idx, :each_lead_config['length'], :each_lead_config['n_leads']])
+                inserted_signal[:,lead_number] = X[idx, :each_lead_config['length'], lead_number]
 
-                inserted_full = np.zeros_like(X[i, :, 1])
+                inserted_full = np.zeros_like(X[idx, :, 1])
 
             ecg_plot_v2.plot_v3(
                 ecg=inserted_signal.T,
@@ -221,7 +224,7 @@ for lead_format, each_lead_config in lead_config.items():
                 lead_index=lead_index,
                 title='', 
                 lead_order=each_lead_config['lead_order'],
-                show_lead_name=False,
+                show_lead_name=True,
                 show_grid=False, 
                 show_separate_line=False,
                 row_height=row_height,
@@ -243,11 +246,6 @@ for lead_format, each_lead_config in lead_config.items():
             # bw_to_yolo(os.path.join(digitization_input_path, f"{sample_name}_lead_{lead_number}.png"), os.path.join(segmentation_output_path, f"{sample_name}_lead_{lead_number}.txt"))
 
         logs[dtset_type].append(log)
-
-
-        cnt2 +=1
-
-    cnt += n_sample_each_lead
 
 for dataset_type, value in logs.items():
     with open(os.path.join(dataset_path, f"logs_segmentation_{dataset_type}.json"), 'w') as f:
