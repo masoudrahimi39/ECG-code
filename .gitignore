@@ -16,3 +16,4 @@ runs/
 wandb/
 model/detection/inf_img
 model/detection/result*
+model/digitization/results
