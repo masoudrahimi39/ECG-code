@@ -16,3 +16,6 @@ runs/
 model/detection/result/
 model/detection/config_test.yaml
 model/detection/config.yaml
+model/detection/result
+model/detection/inf_img
+model/digitization/results
