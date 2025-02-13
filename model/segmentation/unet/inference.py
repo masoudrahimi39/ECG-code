@@ -93,14 +93,18 @@ class SegmentationInference:
         x = torch.tensor(x)
         return (x-self.mean)/self.std
 
+    def __call__(self, image_path):
+        image_tensor = self.preprocess(image_path)
+        mask = self.predict(image_tensor)
+        return mask
+
     def visualize(self, image_path):
         """Visualize the original image and predicted mask."""
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image_resized = cv2.resize(image, (320, 320))
-        image_tensor = self.preprocess(image_path)
-        print(image_tensor.shape)
-        mask = self.predict(image_tensor)
+
+        mask = self(image_path)
         
         plt.figure(figsize=(10, 5))
         plt.subplot(1, 2, 1)
