@@ -20,3 +20,4 @@ model/digitization/results
 others_code/*
 digi_out
 digi_out2
+model/segmentation/unet/temp.ipynb
