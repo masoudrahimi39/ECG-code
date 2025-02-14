@@ -129,7 +129,7 @@ def plot_v3(
 
     xrange_signals = np.arange(ecg.shape[1])/sample_rate/horizontal_scale
     xrange_full = np.arange(full_ecg.shape[0])/sample_rate/horizontal_scale
-    range_horizontal = xrange_signals[-1] + 0.2
+    range_horizontal = xrange_signals[-1] + 0.4
     # range_vertical = 6
 
     n_empty_cell_at_left = 3.25   # number of free cells at the least left
