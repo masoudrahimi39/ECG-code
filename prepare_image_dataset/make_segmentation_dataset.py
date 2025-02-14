@@ -97,9 +97,9 @@ dpi = 250
 dataset_version = 7
 
 # sample each lead for train, validation, and test sets
-sample_each_lead_train = 100
-sample_each_lead_val = 100
-sample_each_lead_test = 100
+sample_each_lead_train = 1
+sample_each_lead_val = 1
+sample_each_lead_test = 1
 
 padding_x:int = 10        # it's the padding around the bounding boxes
 padding_y:int = 30        # it's the padding around the bounding boxes
@@ -148,8 +148,8 @@ lead_config = {
 #TODO: the above lead_config should be uncommented. I wanted to create dataset containing only one lead format for initial development of UNet
 
 train_indices, end_idx = get_indices_information(0, lead_config, sample_each_lead_train)
-test_indices, _ = get_indices_information(end_idx, lead_config, sample_each_lead_test)
-val_indices, _ = get_indices_information(X.shape[0]-sample_each_lead_val*len(lead_config), lead_config, sample_each_lead_val)
+val_indices, _ = get_indices_information(end_idx, lead_config, sample_each_lead_val)
+test_indices, _ = get_indices_information(X.shape[0]-sample_each_lead_test*len(lead_config), lead_config, sample_each_lead_test)
 
 logs = {'train': [], 'test': [], 'val': []}
 
