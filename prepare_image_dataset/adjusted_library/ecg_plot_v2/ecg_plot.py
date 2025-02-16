@@ -228,8 +228,10 @@ def plot_v3(
 
         if show_lead_name:
             bbox = ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
+            lead_name_full_ecg = full_ecg_name
         else:
             bbox = None
+            lead_name_full_ecg = None
 
         output_log['leads'].append({
             "min_x_plot": min(x_signal),
@@ -240,7 +242,7 @@ def plot_v3(
             "y_text": y_text,
             "bbox": bbox,
             "fontsize": fontsize,
-            "text": full_ecg_name,
+            "text": lead_name_full_ecg,
             "ecg": list(full_ecg),
         })
 
