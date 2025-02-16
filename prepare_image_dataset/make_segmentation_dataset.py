@@ -92,18 +92,19 @@ else:
     X = np.load(f'{os.getenv("signal_dataset_path")}all_signals_{sampling_rate}Hz.npy')
     print(f'all_signals_{sampling_rate}Hz.npy file loaded')
 
-dpi = 250
+dpi = 700
 ### convert the signal to ecg image
 dataset_version = 7
 
 # sample each lead for train, validation, and test sets
 sample_each_lead_train = 1
-sample_each_lead_val = 1
-sample_each_lead_test = 1
+sample_each_lead_val = 0
+sample_each_lead_test = 0
 
-padding_x:int = 10        # it's the padding around the bounding boxes
+padding_x:int = 30        # it's the padding around the bounding boxes
 padding_y:int = 30        # it's the padding around the bounding boxes
-border:int = 10         # it's the white border in down left of the image that should be considered in determining the bounding box
+border:int = 34         # it's the white border in down left of the image that should be considered in determining the bounding box
+# for dpi: border -> 250: 12, 700: 34
 
 dataset_path = f'{os.getenv("datasets_path")}image_dataset_v{dataset_version}.0'
 
@@ -138,7 +139,7 @@ row_height = 6.265
 lead_index = ['I', 'II', 'III', 'aVL', 'aVR', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']  # order of the leads in the dataset
 lead_display = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'] # order of the lead that I want to be shown
 lead_config = {
-                # '3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None, 'n_leads': 3}, 
+                '3by1': {'n_column':1, 'length': 1000, 'lead_order': list(range(3)), 'full_ecg_name': None, 'n_leads': 3}, 
                 '3by4': {'n_column':4, 'length': 250, 'lead_order': [0,1,2,4,3,5,6,7,8,9,10,11], 
                         'full_ecg_name': None,
                         'n_leads': 12},
@@ -182,7 +183,7 @@ for data_pack, dtset_type in [(train_indices, "train"), (test_indices, "test"), 
             lead_index=lead_index,
             title='', 
             lead_order=each_lead_config['lead_order'],
-            show_lead_name=True,
+            show_lead_name=False,
             show_grid=True, 
             show_separate_line=False,
             row_height=row_height,
@@ -224,7 +225,7 @@ for data_pack, dtset_type in [(train_indices, "train"), (test_indices, "test"), 
                 lead_index=lead_index,
                 title='', 
                 lead_order=each_lead_config['lead_order'],
-                show_lead_name=True,
+                show_lead_name=False,
                 show_grid=False, 
                 show_separate_line=False,
                 row_height=row_height,
