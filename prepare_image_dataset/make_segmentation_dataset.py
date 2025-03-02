@@ -94,12 +94,12 @@ else:
 
 dpi = 700
 ### convert the signal to ecg image
-dataset_version = 7
+dataset_version = 8
 
 # sample each lead for train, validation, and test sets
-sample_each_lead_train = 1
-sample_each_lead_val = 0
-sample_each_lead_test = 0
+sample_each_lead_train = 5
+sample_each_lead_val = 2
+sample_each_lead_test = 2
 
 padding_x:int = 30        # it's the padding around the bounding boxes
 padding_y:int = 30        # it's the padding around the bounding boxes
@@ -135,7 +135,7 @@ print(f'directory {path_to_segmentation_dataset} created.')
 print(f'directory {path_to_digitization_dataset} created.')
 
 
-row_height = 6.265
+row_height = 3
 lead_index = ['I', 'II', 'III', 'aVL', 'aVR', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6']  # order of the leads in the dataset
 lead_display = ['I', 'II', 'III', 'aVR', 'aVL', 'aVF', 'V1', 'V2', 'V3', 'V4', 'V5', 'V6'] # order of the lead that I want to be shown
 lead_config = {

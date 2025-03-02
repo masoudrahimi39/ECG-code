@@ -179,6 +179,8 @@ def plot_v3(
             idx = c*num_rows + r
             sig = ecg[idx]/vertical_scale
             vertical_starting_point = (num_rows-1-r)*row_height
+
+            is_zero = np.median(sig)==0
             
             x_signal = xrange_signals+c*range_horizontal
             y_signal = sig+vertical_starting_point
@@ -186,14 +188,14 @@ def plot_v3(
             x_text = x_signal[0]
             y_text = vertical_starting_point+2
 
-            ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
-            ax.set_facecolor(face_color)
-            if show_lead_name:
-                bbox = ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
-                lead_name = lead_index[idx]
-            else:
-                bbox = None
-                lead_name = None
+            bbox = None
+            lead_name = None
+            if not is_zero:
+                ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
+                ax.set_facecolor(face_color)
+                if show_lead_name:
+                    bbox = ax.text(x_text,y_text, lead_index[idx], fontsize=fontsize)
+                    lead_name = lead_index[idx]
 
             output_log['leads'].append({
                 "min_x_plot": min(x_signal),
@@ -209,7 +211,7 @@ def plot_v3(
             })
 
             # add seperating line between leads
-            if show_separate_line:
+            if show_separate_line and not is_zero:
                 if c:
                     ax.plot([x_signal[0], x_signal[0]], [y_signal[0] - 0.6, y_signal[0] - 0.2], linewidth='0.5', color=color_line)  # changed
                     ax.plot([x_signal[0], x_signal[0]], [y_signal[0] + 0.2, y_signal[0] + 0.6], linewidth='0.5', color=color_line)  # changed
@@ -218,20 +220,22 @@ def plot_v3(
         sig = full_ecg/vertical_scale
         vertical_starting_point = -1*row_height
 
+        is_zero = np.median(sig)==0
+
         x_signal = xrange_full
         y_signal = sig+vertical_starting_point
 
         x_text = x_signal[0]
         y_text = vertical_starting_point+2
 
-        ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
+        bbox = None
+        lead_name = None
+        if not is_zero:
+            ax.plot(x_signal, y_signal, color=color_line, linewidth='0.5')
 
-        if show_lead_name:
-            bbox = ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
-            lead_name_full_ecg = full_ecg_name
-        else:
-            bbox = None
-            lead_name_full_ecg = None
+            if show_lead_name:
+                bbox = ax.text(x_text,y_text, full_ecg_name, fontsize=fontsize)
+                lead_name_full_ecg = full_ecg_name
 
         output_log['leads'].append({
             "min_x_plot": min(x_signal),
