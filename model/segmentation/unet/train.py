@@ -181,17 +181,18 @@ if __name__ == '__main__':
     augmentation = None
     CLASSES = ["signal"]
     max_height = 320           # since height of the images are different (because we use cropping based on lead detection), we have to set a max height to ensuer consistent image shape
-    train_dataset = Dataset(x_train_dir, y_train_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
-    valid_dataset = Dataset(x_valid_dir, y_valid_dir, max_height=max_height, augmentation=None, classes=CLASSES,)   #! if you want to add augmentation, you should use validaton augmentation
-    test_dataset = Dataset( x_test_dir, y_test_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
+    train_dataset = Dataset(images_dir=x_train_dir, masks_dir=y_train_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
+    valid_dataset = Dataset(images_dir=x_valid_dir, masks_dir=y_valid_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
+    #! if you want to add augmentation, you should use validaton augmentation
+    test_dataset = Dataset(images_dir=x_test_dir, masks_dir=y_test_dir, max_height=max_height, augmentation=None, classes=CLASSES,)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True, num_workers=4, persistent_workers=True)
-    valid_loader = DataLoader(valid_dataset, batch_size=32, shuffle=False, num_workers=4, persistent_workers=True)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False, num_workers=4, persistent_workers=True)
+    train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=8)
+    valid_loader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=8, persistent_workers=True)
+    test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=8)
 
 
     # Some training hyperparameters
-    EPOCHS = 1
+    EPOCHS = 80
     T_MAX = EPOCHS * len(train_loader)
     # Always include the background as a class
     OUT_CLASSES = len(train_dataset.CLASSES)
@@ -213,18 +214,20 @@ if __name__ == '__main__':
     )
     # logger = pl.loggers.TensorBoardLogger(save_dir)
     trainer = pl.Trainer(max_epochs=EPOCHS,
-                     default_root_dir=save_dir,
-                     enable_checkpointing=True,
-                     enable_progress_bar=True,
-                     callbacks=[checkpoint_callback, early_stop_callback],
+                    default_root_dir=save_dir,
+                    enable_checkpointing=True,
+                    enable_progress_bar=True,
+                    callbacks=[checkpoint_callback, early_stop_callback],
                     #  logger=logger,
-                     )
-
+                    )
 
     trainer.fit(
         model,
         train_dataloaders=train_loader,
         val_dataloaders=valid_loader,
+        # ckpt_path='/content/drive/MyDrive/ECG-project/code/model/segmentation_unet/lightning_logs/version_15/checkpoints/best-model-epoch=39-val_loss=0.00.ckpt',
+        # ckpt_path='/content/drive/MyDrive/ECG-project/code/model/segmentation_unet/model_last.pth',
+        # ckpt_path='/content/drive/MyDrive/train-log/lightning_logs/version_4/checkpoints/best-model-epoch=45-val_loss=0.00.ckpt',
     )
 
     torch.save(model.state_dict(), 'model/segmentation/unet/model123.pth')

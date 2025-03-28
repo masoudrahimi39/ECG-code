@@ -1,6 +1,7 @@
 import os
 import cv2
 from PIL import Image
+import random
 
 import torch
 import numpy as np
@@ -17,7 +18,10 @@ import pytorch_lightning as pl
 
 def scale_up_img_size(image, target_height, divisible_by=32):
     '''Calculate new dimensions for image that are divisible by 32 as it is necessary for UNet input to be divisible by 32'''
-    
+
+    # print(f"Input image shape: {image.shape}")
+    # print(f"Target height: {target_height}")
+
     # target_height = ((image.shape[0] + divisible_by-1) // divisible_by) * divisible_by  # Round up to nearest multiple of divisible_by
     target_width = ((image.shape[1] + divisible_by-1) // divisible_by) * divisible_by
 
@@ -28,12 +32,51 @@ def scale_up_img_size(image, target_height, divisible_by=32):
     pad_bottom = pad_height - pad_top
     pad_left = pad_width // 2
     pad_right = pad_width - pad_left
-    
+
+    # print(f"Calculated pad_height: {pad_height}")
+    # print(f"Calculated pad_width: {pad_width}")
+    # print(f"Padding values - top: {pad_top}, bottom: {pad_bottom}, left: {pad_left}, right: {pad_right}")
+
     if len(image.shape) == 2:
         image = np.pad(image, ((pad_top, pad_bottom), (pad_left, pad_right)), mode='constant', constant_values=0)
     elif len(image.shape) == 3:
         image = np.pad(image, ((pad_top, pad_bottom), (pad_left, pad_right), (0, 0)), mode='constant', constant_values=0)
     return image
+
+def resize_and_crop(image, mask, target_height=160, target_width=320):
+    height, width = image.shape[:2]
+
+    # Determine the scaling factor to resize the smaller dimension to 320
+    if width/target_width < height/target_height:
+        new_width = target_width
+        new_height = int((height / width) * target_width)
+    else:
+        new_height = target_height
+        new_width = int((width / height) * target_height)
+
+    # Resize the image while maintaining the aspect ratio
+    resized_image = cv2.resize(image, (new_width, new_height), interpolation=cv2.INTER_LANCZOS4)
+    resized_mask = cv2.resize(mask, (new_width, new_height), interpolation=cv2.INTER_LANCZOS4)
+
+    # Determine the random crop coordinates
+    x_max = new_width - target_width
+    y_max = new_height - target_height
+
+    if x_max > 0:
+        x_start = random.randint(0, x_max)
+    else:
+        x_start = 0
+
+    if y_max > 0:
+        y_start = random.randint(0, y_max)
+    else:
+        y_start = 0
+
+    cropped_image = resized_image[y_start:y_start + target_height, x_start:x_start + target_width]
+    cropped_mask = resized_mask[y_start:y_start + target_height, x_start:x_start + target_width]
+
+    return cropped_image, cropped_mask
+
 
 class Dataset(BaseDataset):
     """CamVid Dataset. Read images, apply augmentation transformations.
@@ -56,36 +99,52 @@ class Dataset(BaseDataset):
         max_height,      # maximum height of images. as you know, we crop the leads and it will have different height
         classes=None,
         augmentation=None,
-    ): 
+    ):
         self.max_height = max_height
         self.image_ids = os.listdir(images_dir)
         self.mask_ids = os.listdir(masks_dir)
-        self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.image_ids]
-        self.masks_fps = [os.path.join(masks_dir, mask_id) for mask_id in self.mask_ids]
+
+        # self.images_fps = [os.path.join(images_dir, image_id) for image_id in self.image_ids]
+        # self.masks_fps = [os.path.join(masks_dir, mask_id) for mask_id in self.mask_ids]
+        self.images_fps = [] # [os.path.join(images_dir, image_id) for image_id in self.image_ids]
+        self.masks_fps = [] # [os.path.join(masks_dir, mask_id) for mask_id in self.mask_ids]
+        for image_id in self.image_ids:
+          mask_path = os.path.join(masks_dir, image_id.replace(".png", ".bmp"))
+          if not os.path.exists(mask_path):
+            continue
+          self.images_fps.append(os.path.join(images_dir, image_id))
+          self.masks_fps.append(mask_path)
 
         # convert str names to class values on masks
         self.class_values = [self.CLASSES.index(cls.lower()) for cls in classes]
         self.augmentation = augmentation
-    
+
     
     def __getitem__(self, i):
+        selected_size = (96, 96)
 
-        image = cv2.imread(self.images_fps[i]) 
+        image = cv2.imread(self.images_fps[i])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # BGR-->RGB
+        image = np.array(image)
 
-        if image.shape[0] > self.max_height:
-            print(f"Skipping image {self.images_fps[i]} as its height {image.shape[0]} is greater than maximum height{self.max_height}")
-            return self.__getitem__((i + 1) % len(self))
-        
-        image = scale_up_img_size(image, divisible_by=32, target_height=self.max_height) # scale up image width and height
+        # image = cv2.resize(image, selected_size)
+
+        # if image.shape[0] > self.max_height:
+        #     # print(f"Skipping image {self.images_fps[i]} as its height {image.shape[0]} is greater than maximum height{self.max_height}")
+        #     return self.__getitem__((i + 1) % len(self))
+
+        # image = scale_up_img_size(image, divisible_by=32, target_height=self.max_height) # scale up image width and height
 
         mask = Image.open(self.masks_fps[i]).convert('L')  # load single channel
-        mask = np.array(mask) 
+        mask = np.array(mask)
+        # mask = cv2.resize(mask, selected_size)
 
-        
-        mask = scale_up_img_size(mask, divisible_by=32, target_height=self.max_height)
+
+        # mask = scale_up_img_size(mask, divisible_by=32, target_height=self.max_height)
+        image, mask = resize_and_crop(image, mask, target_height=selected_size[0], target_width=selected_size[1])
+
         assert np.all(np.isin(mask, [0, 1])), "Mask contains non-binary values"
-        
+
         # extract certain classes from mask (e.g. cars)
         masks = [(mask == v) for v in self.class_values]
         mask = np.stack(masks, axis=-1).astype("float")
@@ -99,8 +158,7 @@ class Dataset(BaseDataset):
         return image.transpose(2, 0, 1), mask.transpose(2, 0, 1)
 
     def __len__(self):
-        return len(self.image_ids)
-
+        return len(self.images_fps)
 
 
 # helper function for data visualization
