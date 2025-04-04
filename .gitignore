@@ -24,3 +24,8 @@ model/segmentation/unet/temp.ipynb
 model/segmentation/unet/train.ipynb
 lightning_logs
 model/segmentation/unet/data
+example/*.png
+example/*/*.png
+example/*/*.bmp
+example/*/*.txt
+example/*/*.json
