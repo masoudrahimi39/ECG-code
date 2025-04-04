@@ -10,7 +10,7 @@ from typing import List, Optional, Sequence, Tuple, Union
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
-from numpy.lib.arraysetops import isin
+# from numpy.lib.arraysetops import isin
 
 from . import common
 from .image import Image, ColorImage, GrayscaleImage, BinaryImage

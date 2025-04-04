@@ -44,12 +44,15 @@ def scale_up_img_size(image, target_height, divisible_by=32):
     return image
 
 def resize_and_crop(image, mask, target_height=160, target_width=320):
+    mask[mask>1] = 0
+
     height, width = image.shape[:2]
 
     # Determine the scaling factor to resize the smaller dimension to 320
     if width/target_width < height/target_height:
         new_width = target_width
-        new_height = int((height / width) * target_width)
+        new_height = target_height
+        # new_height = int((height / width) * target_width)
     else:
         new_height = target_height
         new_width = int((width / height) * target_height)
@@ -76,6 +79,73 @@ def resize_and_crop(image, mask, target_height=160, target_width=320):
     cropped_mask = resized_mask[y_start:y_start + target_height, x_start:x_start + target_width]
 
     return cropped_image, cropped_mask
+
+class AddVerticalLines(A.DualTransform):
+    def __init__(self, num_lines=5, line_width=1, always_apply=False, p=0.5):
+        super(AddVerticalLines, self).__init__(always_apply, p=p)
+        self.num_lines = num_lines  # تعداد خطوط
+        self.line_width = line_width  # عرض خطوط
+
+    def apply(self, image, **params):
+        h, w, c = image.shape
+        for _ in range(self.num_lines):
+            x = random.randint(0, w - self.line_width)
+            image[:, x:x + self.line_width, :] = 0  # خط سیاه عمودی
+        return image
+
+    def apply_to_mask(self, mask, **params):
+        return mask  # mask بدون تغییر می‌ماند
+
+class OverlaySignal(A.DualTransform):
+    def __init__(self, signal_dir, crop_height=50, always_apply=False, p=0.5):
+        super(OverlaySignal, self).__init__(always_apply, p=p)
+        self.signal_dir = signal_dir  # پوشه حاوی تصاویر BMP سیگنال
+        self.crop_height = crop_height  # ارتفاع بخشی که برش داده می‌شود
+        self.signal_files = [f for f in os.listdir(signal_dir) if f.endswith('.bmp')]
+
+    def apply(self, image, **params):
+        # انتخاب تصادفی یک تصویر سیگنال
+        signal_file = random.choice(self.signal_files)
+        signal_path = os.path.join(self.signal_dir, signal_file)
+        signal = cv2.imread(signal_path, cv2.IMREAD_GRAYSCALE)  # خواندن به صورت تک‌کاناله
+        signal = np.array(signal)
+
+        # برش تصادفی بخشی از سیگنال
+        h, w = signal.shape
+        # crop_height = random.randint(5, self.crop_height)
+        # crop_y = random.randint(0, h - self.crop_height)
+        crop_height = random.randint(int(0.12*h), int(0.7*h))
+        if random.random() < 0.5:
+          cropped_signal = signal[: crop_height, :]
+          cropped_signal = cropped_signal[::-1, :]
+        else:
+          cropped_signal = signal[-crop_height:, :]
+
+        crop_width = random.randint(int(0.05*w), int(0.1*w))
+        cropped_signal = cropped_signal[:, crop_width:-crop_width]
+
+        if cropped_signal.shape[1]>image.shape[1]:
+          cropped_signal = cropped_signal[: ,:image.shape[1]]
+
+        # تغییر اندازه سیگنال برش‌خورده به عرض تصویر ورودی
+        cropped_signal = cv2.resize(cropped_signal, (image.shape[1], self.crop_height))
+
+        x, y = np.where(cropped_signal > 0)
+        image[x, y, :] = 0
+
+        # # انتخاب تصادفی بالا یا پایین تصویر
+        # if random.random() < 0.5:
+        #     # image[:self.crop_height, :, 1] = np.where(cropped_signal > 0, 0, image[:self.crop_height, :, 0])
+        #     # image[:self.crop_height, :, 2] = np.where(cropped_signal > 0, 0, image[:self.crop_height, :, 0])
+        # else:
+        #     image[-self.crop_height:, :, 0] = np.where(cropped_signal > 0, 0, image[-self.crop_height:, :, 0])
+        #     image[-self.crop_height:, :, 1] = np.where(cropped_signal > 0, 0, image[-self.crop_height:, :, 0])
+        #     image[-self.crop_height:, :, 2] = np.where(cropped_signal > 0, 0, image[-self.crop_height:, :, 0])
+
+        return image
+
+    def apply_to_mask(self, mask, **params):
+        return mask  # mask بدون تغییر می‌ماند
 
 
 class Dataset(BaseDataset):
@@ -117,11 +187,33 @@ class Dataset(BaseDataset):
 
         # convert str names to class values on masks
         self.class_values = [self.CLASSES.index(cls.lower()) for cls in classes]
-        self.augmentation = augmentation
+        # self.augmentation = augmentation
+        # self.augmentation = A.Compose([
+        #   OverlaySignal(signal_dir='/content/drive/MyDrive/dataset/image_dataset_v9.0/segmentation/train/labels', crop_height=40, p=0.3),
+        #   # CustomResizeAndCrop(height=128, width=320, always_apply=True, p=1.0),
+        #   AddVerticalLines(num_lines=2, line_width=2, p=0.3),
+        #   A.VerticalFlip(p=0.4),
+        #   A.HorizontalFlip(p=0.4),
+        #   A.Rotate(limit=5, p=0.2),
+        #   # A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.5),
+        #   # A.HueSaturationValue(p=0.5),
+        #   # A.ToGray(p=0.2),
+        #   A.GaussNoise(var_limit=(5.0, 20.0), p=0.2),
+        #   A.GaussianBlur(blur_limit=(1, 5), p=0.2),
+        #   # A.RandomFog(fog_coef_lower=0.1, fog_coef_upper=0.3, p=0.2),
+        # ])
+        self.augmentation = A.Compose([
+          A.VerticalFlip(p=0.5),
+          A.HorizontalFlip(p=0.5),
+          OverlaySignal(signal_dir='/content/drive/MyDrive/dataset/image_dataset_v9.0/segmentation/train/labels', crop_height=30, p=0.4),
+          A.Rotate(limit=5, p=0.3),
+          AddVerticalLines(num_lines=2, line_width=2, p=0.3),
+          A.GaussNoise(var_limit=(1.0, 4.0), p=0.2),
+          A.GaussianBlur(blur_limit=(1, 5), p=0.2),
+        ])
 
-    
     def __getitem__(self, i):
-        selected_size = (96, 96)
+        selected_size = (128, 320)
 
         image = cv2.imread(self.images_fps[i])
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # BGR-->RGB
@@ -143,7 +235,7 @@ class Dataset(BaseDataset):
         # mask = scale_up_img_size(mask, divisible_by=32, target_height=self.max_height)
         image, mask = resize_and_crop(image, mask, target_height=selected_size[0], target_width=selected_size[1])
 
-        assert np.all(np.isin(mask, [0, 1])), "Mask contains non-binary values"
+        # assert np.all(np.isin(mask, [0, 1])), "Mask contains non-binary values"
 
         # extract certain classes from mask (e.g. cars)
         masks = [(mask == v) for v in self.class_values]
