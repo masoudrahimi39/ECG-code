@@ -29,9 +29,13 @@ from ecgdigitize.image import BinaryImage, ColorImage, openImage, saveImage
 from ecgdigitize.signal import detection as signal_detection
 from ecgdigitize.signal.extraction import viterbi
 
+import matplotlib.pylab as plt
 
 
-def process_digitized_signal(digitized_signal, real_signal, baseline=0, y_scale=0.00617, x_scale=2.54):
+def process_digitized_signal(digitized_signal, real_signal, baseline=0.005, 
+                             y_scale=0.0064, x_scale=2.54
+                            # y_scale=0.01802, x_scale=7.16332378                             
+                            ):
     '''Process and align the extracted signal with the real signal.'''
     # Remove NaN values
     digitized_signal = digitized_signal[~np.isnan(digitized_signal)]
@@ -49,7 +53,7 @@ def process_digitized_signal(digitized_signal, real_signal, baseline=0, y_scale=
 
     # shift y values of the signal
     y_vals = -(y_vals - np.median(y_vals) + baseline)
-
+    
     # handle time misalignment (shift the signal in x axis)
     lag = np.argmax(correlate(real_signal, y_vals)) - (len(y_vals) - 1)
     y_vals = np.roll(y_vals, lag)
@@ -82,7 +86,14 @@ def get_final_signal(*, image_path: str, label_path: str, output_path: str, save
             saveImage(output, Path(output_image_path))
         # x an y values of the digitized signal after processing
         x_vals, y_vals = process_digitized_signal(signal, real_signal)
+        
         correlation = pearsonr(y_vals, real_signal)[0]
+        print(correlation)
+        print(f'MSE: {np.mean(abs(y_vals - real_signal))}')
+        plt.plot(y_vals, 'r')
+        plt.plot(real_signal, 'b')
+        plt.show()
+        
         return x_vals, y_vals, correlation
     except Exception as e:
         print(f"Error processing {image_path}: {str(e)}")
@@ -90,6 +101,7 @@ def get_final_signal(*, image_path: str, label_path: str, output_path: str, save
 
 def validate(DATASET_PATH, LABELS_PATH, OUTPUT_PATH, save_image: bool):
     '''get paths to input image and correpondig labels and return the average correlation and the digitized signals'''
+    from datetime import datetime
     os.makedirs(OUTPUT_PATH, exist_ok=True)
     correlations = []
     digitized_signals = []
@@ -100,11 +112,15 @@ def validate(DATASET_PATH, LABELS_PATH, OUTPUT_PATH, save_image: bool):
         print(f"label_path: {label_path}")
         x_vals, y_vals, correlation = get_final_signal(image_path=image_path, label_path=label_path, output_path=OUTPUT_PATH, save_image=save_image) 
         print(f"correlation: {correlation}")
-        correlations.append(correlation)
+        correlations.append(correlation)    
+    
         # digitized_signals.append(y_vals)
 
     print(f"Average correlation: {np.mean(correlations)}")
+    
 
+    with open(f"corr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt", "w") as f:
+        f.writelines(f"{item}\n" for item in correlations)
 
 def testSingle(path: str):
     image = openImage(Path(path))
@@ -124,11 +140,24 @@ def testSingle(path: str):
 
 
 if __name__ == "__main__":
-    DATASET_PATH = r'datasets/image_dataset_v6.0/digitization/train/images'
-    LABELS_PATH = r'datasets/image_dataset_v6.0/digitization/train/labels'
-    OUTPUT_PATH = r'model/digitization/results'
-    validate(DATASET_PATH, LABELS_PATH, OUTPUT_PATH, save_image=True)
+    # DATASET_PATH = r'datasets/image_dataset_v6.0/digitization/train/images'
+    # LABELS_PATH = r'datasets/image_dataset_v6.0/digitization/train/labels'
+    # OUTPUT_PATH = r'model/digitization/results'
+    # validate(DATASET_PATH, LABELS_PATH, OUTPUT_PATH, save_image=False)
 
+    # DATASET_PATH = r'datasets/image_dataset_v7.0/digitization/train/images'
+    # LABELS_PATH = r'datasets/image_dataset_v7.0/digitization/train/labels'
+    # OUTPUT_PATH = r'model/digitization/results'
+    # validate(DATASET_PATH, LABELS_PATH, OUTPUT_PATH, save_image=False)
+
+    get_final_signal(
+                    # image_path=r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\train\labels\0_3by4_lead_0.bmp',
+                     image_path=r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v7.0\segmentation\train\labels\0_3by1_lead_0.bmp',
+                    
+                    #  image_path=r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v6.0\digitization\train\images\0_3by1_lead_0.png',
+                     label_path=r'D:\Education\4_ECG_digitization\ECG-code\datasets\image_dataset_v6.0\digitization\train\labels\0_3by1_lead_0.json',
+                     output_path=r'D:\Education\4_ECG_digitization\ECG-code', 
+                     save_image=True)
 
 
 # TODO:
