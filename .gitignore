@@ -29,3 +29,4 @@ example/*/*.png
 example/*/*.bmp
 example/*/*.txt
 example/*/*.json
+*.ckpt
