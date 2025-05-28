@@ -66,8 +66,13 @@ def get_image_paths(dataset_path):
     return list(Path(dataset_path).glob('*.png'))
 
 
-def get_final_signal(*, image_path: str, label_path: str, output_path: str, save_image: bool):
-    '''get path of a single image and return the digitized signal and its correlation with the real signal'''
+def get_final_signal(y_scale=0.00617, x_scale=2.54, *, image_path: str, label_path: str, output_path: str, save_image: bool):
+    '''get path of a single image and return the digitized signal and its correlation with the real signal
+    Args:
+        y_scale: mv/pixel, default is 0.00617
+        x_scale: cm/pixel, default is 2.54
+    '''
+    
     image_path = Path(image_path)
     image = openImage(image_path)
     binary = signal_detection.adaptive(image)
@@ -82,7 +87,7 @@ def get_final_signal(*, image_path: str, label_path: str, output_path: str, save
             output_image_path = os.path.join(output_path, Path(image_path).name)
             saveImage(output, Path(output_image_path))
         # x an y values of the digitized signal after processing
-        x_vals, y_vals = process_digitized_signal(signal, real_signal)
+        x_vals, y_vals = process_digitized_signal(signal, real_signal, y_scale=y_scale, x_scale=x_scale)
         correlation = pearsonr(y_vals, real_signal)[0]
         return x_vals, y_vals, correlation
     except Exception as e:
