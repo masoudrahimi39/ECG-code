@@ -20,8 +20,8 @@ def find_dominant_lines(ys):
 
 
 
-def find_gridsize(image_path):
-    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
+def find_gridsize(image_path, show=None):
+    image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)[:1000, :1000]
     # blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
     # edges = cv2.Canny(blurred_image, 40, 150)
 
@@ -50,7 +50,7 @@ def find_gridsize(image_path):
 
     labels = kmeans.labels_.flatten()
 
-    closest_cluster_index = np.argsort(centers)[1]
+    closest_cluster_index = np.argsort(kmeans.cluster_centers_.flatten())[1]
 
     mask = np.isin(labels, closest_cluster_index)
     binary_image = np.zeros_like(image)
@@ -66,8 +66,8 @@ def find_gridsize(image_path):
     vertical_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 8))
     vertical_lines = cv2.morphologyEx(closing, cv2.MORPH_OPEN, vertical_kernel, iterations=2)
 
-    # original_image = cv2.imread(image_path)
-    # original_image_copy = original_image.copy()
+    original_image = cv2.imread(image_path)
+    original_image_copy = original_image.copy()
 
     lines = cv2.HoughLinesP(horizontal_lines, 1, np.pi/180, threshold=100, minLineLength=30, maxLineGap=10)
     if lines is not None:
@@ -76,9 +76,11 @@ def find_gridsize(image_path):
             x1, y1, x2, y2 = line[0]
             ys.append((y1+y2)/2)
         ys = find_dominant_lines(ys)
-        # for y in ys:
-        #     y = np.uint(y)
-        #     cv2.line(original_image_copy, (0, y), (original_image_copy.shape[1], y), (0, 255, 0), 2)
+        print(f"ys: {ys}")
+        if show:
+            for y in ys:
+                y = np.uint(y)
+                cv2.line(original_image_copy, (0, y), (original_image_copy.shape[1], y), (0, 255, 0), 2)
 
     lines = cv2.HoughLinesP(vertical_lines, 1, np.pi/180, threshold=100, minLineLength=30, maxLineGap=10)
     if lines is not None:
@@ -87,9 +89,11 @@ def find_gridsize(image_path):
             x1, y1, x2, y2 = line[0]
             xs.append((x1+x2)/2)
         xs = find_dominant_lines(xs)
-        # for x in xs:
-        #     x = np.uint(x)
-        #     cv2.line(original_image_copy, (x, 0), (x, original_image_copy.shape[0]), (0, 255, 0), 2)
+        print(f"xs: {xs}")
+        if show:
+            for x in xs:
+                x = np.uint(x)
+                cv2.line(original_image_copy, (x, 0), (x, original_image_copy.shape[0]), (0, 255, 0), 2)
     
     xs = np.array(xs)
     ys = np.array(ys)
@@ -106,6 +110,10 @@ def find_gridsize(image_path):
         dist_x = dist_y
     if dist_y==0:
         dist_y = dist_x
+
+    if show:
+        plt.savefig(show)
+        plt.close()
 
     return dist_x, dist_y
     
