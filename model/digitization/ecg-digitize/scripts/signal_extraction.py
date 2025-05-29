@@ -10,6 +10,7 @@ import os
 from pathlib import Path
 import sys
 import json
+import matplotlib.pyplot as plt
 
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if project_root not in sys.path:
@@ -79,15 +80,25 @@ def get_final_signal(y_scale=0.00617, x_scale=2.54, *, image_path: str, label_pa
     signal = ecgdigitize.digitizeSignal(binary)
 
     with open(label_path, 'r') as f:
-        real_signal = json.load(f)
+        real_signal = np.array(json.load(f))
+        real_signal -= np.median(real_signal)
 
     try:
+        # x an y values of the digitized signal after processing
+        x_vals, y_vals = process_digitized_signal(signal, real_signal, y_scale=y_scale, x_scale=x_scale)
         if save_image:
             output = visualization.overlaySignalOnImage(signal, binary.toColor())
             output_image_path = os.path.join(output_path, Path(image_path).name)
             saveImage(output, Path(output_image_path))
-        # x an y values of the digitized signal after processing
-        x_vals, y_vals = process_digitized_signal(signal, real_signal, y_scale=y_scale, x_scale=x_scale)
+
+            plt.close()
+            plt.plot(y_vals, label='Digitized Signal')
+            plt.plot(real_signal, label='Real Signal')
+            plt.legend()
+            plt.title(np.mean((y_vals-real_signal)**2))
+            plt.savefig(os.path.join(output_path, f"{Path(image_path).stem}_comparison.png"))
+            plt.close()
+
         correlation = pearsonr(y_vals, real_signal)[0]
         return x_vals, y_vals, correlation
     except Exception as e:
@@ -130,9 +141,9 @@ def testSingle(path: str):
 
 
 if __name__ == "__main__":
-    DATASET_PATH = r'datasets/image_dataset_v6.0/digitization/train/images'
-    LABELS_PATH = r'datasets/image_dataset_v6.0/digitization/train/labels'
-    OUTPUT_PATH = r'model/digitization/results'
+    DATASET_PATH = 'datasets/image_dataset_v8.0/digitization/test/images'
+    LABELS_PATH = 'datasets/image_dataset_v8.0/digitization/test/labels'
+    OUTPUT_PATH = 'model/digitization/results'
     validate(DATASET_PATH, LABELS_PATH, OUTPUT_PATH, save_image=True)
 
 
